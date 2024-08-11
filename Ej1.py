@@ -1,0 +1,188 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+
+def calcular_regresion_lineal(x, y):
+    A = np.vstack([x, np.ones(len(x))]).T
+    m, c = np.linalg.lstsq(A, y, rcond=None)[0]
+    return m, c
+
+
+def plt_calorias_alcohol(df):
+    # Define the bins and labels
+    bins = [0, 1100, 1700, float('inf')]
+    labels = ['1100 or fewer', '1101-1700', '1701 or more']
+
+    # Create a new column in the DataFrame for the calorie category
+    df['Calorie_Category'] = pd.cut(df['Calorías'], bins=bins, labels=labels, right=False)
+
+    # Scatter plot
+    plt.figure(figsize=(10, 6))
+    categories = df['Calorie_Category'].unique()
+    colors = ['blue', 'green', 'red']
+
+    for category, color in zip(categories, colors):
+        subset = df[df['Calorie_Category'] == category]
+        plt.scatter(subset['Calorías'], subset['Alcohol'], label=category, color=color)
+
+    plt.xlabel('Calorías')
+    plt.ylabel('Alcohol Consumption')
+    plt.title('Scatter Plot of Alcohol Consumption vs. Calorías')
+    plt.legend(title='Calorie Category')
+    plt.grid(True)
+    plt.savefig("img/1_alcohol_calories_cat.png")
+
+
+def plt_calorias_alcohol_sex(df):
+    # Scatter plot
+    plt.figure(figsize=(10, 6))
+    colors = {'F': 'blue', 'M': 'red'}
+
+    # Mapping Sexo values to full labels
+    df['Sexo'] = df['Sexo'].map({'F': 'Female', 'M': 'Male'})
+
+    # Scatter plot
+    plt.figure(figsize=(10, 6))
+    colors = {'Female': 'blue', 'Male': 'red'}
+
+    for sexo in df['Sexo'].unique():
+        subset = df[df['Sexo'] == sexo]
+        plt.scatter(subset['Calorías'], subset['Alcohol'], label=sexo, color=colors[sexo])
+
+    # plt.axvline(x=1100, color="black")
+    plt.axvline(x=1400, color="black")
+    plt.axvline(x=1700, color="black")
+    plt.axvline(x=2100, color="black")
+
+    plt.xlabel('Calorías')
+    plt.ylabel('Alcohol Consumption')
+    plt.title('Scatter Plot of Alcohol Consumption vs. Calorías Colored by Sex')
+    plt.legend(title='Sex')
+    plt.grid(True)
+    plt.savefig("img/1_alcohol_calories_sex.png")
+
+
+def plt_grasas_calorias(df):
+    plt.figure(figsize=(10, 6))
+    colors = {'F': 'blue', 'M': 'red'}
+    df['Sexo'] = df['Sexo'].map({'F': 'Female', 'M': 'Male'})
+    plt.figure(figsize=(10, 6))
+    colors = {'Female': 'blue', 'Male': 'red'}
+
+    for sexo in df['Sexo'].unique():
+        subset = df[df['Sexo'] == sexo]
+        plt.scatter(subset['Calorías'], subset['Grasas_sat'], label=sexo, color=colors[sexo])
+
+
+    plt.xlabel('Calorías')
+    plt.ylabel('Grasas_sat Consumption')
+    plt.title('Scatter Plot of Grasas_sat Consumption vs. Calorías Colored by Sex')
+    plt.legend(title='Sex')
+    plt.grid(True)
+    plt.savefig("img/1_grasas_calories_sex.png")
+
+def plt_grasas_calorias_reg(df):
+    plt.figure(figsize=(10, 6))
+    colors = {'F': 'blue', 'M': 'red'}
+    df['Sexo'] = df['Sexo'].map({'F': 'Female', 'M': 'Male'})
+    plt.figure(figsize=(10, 6))
+    colors = {'Female': 'blue', 'Male': 'red'}
+
+    regresion_params = {}
+
+    for sexo in df['Sexo'].unique():
+        subset = df[df['Sexo'] == sexo].copy()
+        subset['Calorías'] = pd.to_numeric(subset['Calorías'], errors='coerce')
+        subset['Grasas_sat'] = pd.to_numeric(subset['Grasas_sat'], errors='coerce')
+        subset = subset.dropna(subset=['Calorías', 'Grasas_sat'])
+        plt.scatter(subset['Calorías'], subset['Grasas_sat'], label=sexo, color=colors[sexo])
+
+        # Calcular regresión lineal
+        X = subset['Calorías'].values
+        y = subset['Grasas_sat'].values
+        X = X.astype(float)
+        y = y.astype(float)
+        m, c = calcular_regresion_lineal(X, y)
+        y_pred = m * X + c
+        sexo_name = sexo.replace(" ", "_")
+        regresion_params[sexo_name] = (m, c)
+
+        plt.plot(X, y_pred, color=colors[sexo], linestyle='--')
+
+    plt.xlabel('Calorías')
+    plt.ylabel('Grasas_sat Consumption')
+    plt.title('Scatter Plot of Grasas_sat Consumption vs. Calorías Colored by Sex')
+    plt.legend(title='Sex')
+    plt.grid(True)
+    plt.savefig("img/1_grasas_calories_sex_reg.png")
+    plt.close()
+
+    # Convertir los parámetros a una matriz 2x2
+    params_matrix = np.array([[regresion_params.get('Female', (np.nan, np.nan))[0],
+                              regresion_params.get('Female', (np.nan, np.nan))[1]],
+                             [regresion_params.get('Male', (np.nan, np.nan))[0],
+                              regresion_params.get('Male', (np.nan, np.nan))[1]]])
+
+    return params_matrix
+
+def grasas_alcohol(df):
+    df['Sexo'] = df['Sexo'].map({'F': 'Female', 'M': 'Male'})
+    plt.figure(figsize=(10, 6))
+    colors = {'Female': 'blue', 'Male': 'red'}
+
+    for sexo in df['Sexo'].unique():
+        subset = df[df['Sexo'] == sexo]
+        plt.scatter(subset['Alcohol'], subset['Grasas_sat'], label=sexo, color=colors[sexo])
+
+    plt.xlabel('Alcohol Consumption')
+    plt.ylabel('Grasas Saturadas')
+    plt.title('Scatter Plot of Grasas Saturadas vs. Alcohol Consumption Colored by Sex')
+    plt.legend(title='Sex')
+    plt.grid(True)
+    plt.savefig("img/1_alcohol_grasas.png")
+
+
+def input_remove():
+    file_path = "data/DatosAlimenticios.xls"
+
+    df = pd.read_excel(file_path)
+    #df = pd.read_csv("data/DatosAlimenticios.csv")
+
+    df.replace(999.99, pd.NA, inplace=True)
+    df = df.dropna()
+    
+    return df
+
+
+def inferir_dato(calorias, sexo, params_matrix):
+    if sexo == 'F':
+        row = 0
+    elif sexo == 'M':
+        row = 1
+    else:
+        print("Sexo no válido")
+    
+    m = params_matrix[row, 0]
+    c = params_matrix[row, 1]
+    return m * calorias + c
+
+
+
+def main():
+    df = input_remove()
+    plt_calorias_alcohol(df.copy())
+    plt_calorias_alcohol_sex(df.copy())
+    plt_grasas_calorias(df.copy())
+    grasas_alcohol(df.copy())
+    params_matrix = plt_grasas_calorias_reg(df)
+    calorias = 1000
+    sexo = 'F'
+    salida = inferir_dato(calorias, sexo, params_matrix)
+    print("Con " + str(calorias) + " calorias y " + sexo + ": " + str(salida) + " grasas") 
+
+
+
+if __name__ == "__main__":
+    main()
