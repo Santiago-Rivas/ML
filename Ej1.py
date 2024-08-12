@@ -13,7 +13,7 @@ def calcular_regresion_lineal(x, y):
 def plt_calorias_alcohol(df):
     # Define the bins and labels
     bins = [0, 1100, 1700, float('inf')]
-    labels = ['1100 or fewer', '1101-1700', '1701 or more']
+    labels = ['CAT 1', 'CAT 2', 'CAT 3']
 
     # Create a new column in the DataFrame for the calorie category
     df['Calorie_Category'] = pd.cut(df['Calorías'], bins=bins, labels=labels, right=False)
@@ -28,9 +28,9 @@ def plt_calorias_alcohol(df):
         plt.scatter(subset['Calorías'], subset['Alcohol'], label=category, color=color)
 
     plt.xlabel('Calorías')
-    plt.ylabel('Alcohol Consumption')
-    plt.title('Scatter Plot of Alcohol Consumption vs. Calorías')
-    plt.legend(title='Calorie Category')
+    plt.ylabel('Alcohol')
+    plt.title('Alcohol vs. Calorías')
+    plt.legend(title='Categoría')
     plt.grid(True)
     plt.savefig("img/1_alcohol_calories_cat.png")
 
@@ -57,9 +57,9 @@ def plt_calorias_alcohol_sex(df):
     plt.axvline(x=2100, color="black")
 
     plt.xlabel('Calorías')
-    plt.ylabel('Alcohol Consumption')
-    plt.title('Scatter Plot of Alcohol Consumption vs. Calorías Colored by Sex')
-    plt.legend(title='Sex')
+    plt.ylabel('Alcohol')
+    plt.title('Alcohol vs. Calorías')
+    plt.legend(title='Sexo')
     plt.grid(True)
     plt.savefig("img/1_alcohol_calories_sex.png")
 
@@ -77,8 +77,8 @@ def plt_grasas_calorias(df):
 
 
     plt.xlabel('Calorías')
-    plt.ylabel('Grasas_sat Consumption')
-    plt.title('Scatter Plot of Grasas_sat Consumption vs. Calorías Colored by Sex')
+    plt.ylabel('Grasas_sat')
+    plt.title('Grasas_sat vs. Calorías')
     plt.legend(title='Sex')
     plt.grid(True)
     plt.savefig("img/1_grasas_calories_sex.png")
@@ -112,8 +112,8 @@ def plt_grasas_calorias_reg(df):
         plt.plot(X, y_pred, color=colors[sexo], linestyle='--')
 
     plt.xlabel('Calorías')
-    plt.ylabel('Grasas_sat Consumption')
-    plt.title('Scatter Plot of Grasas_sat Consumption vs. Calorías Colored by Sex')
+    plt.ylabel('Grasas_sat')
+    plt.title('Grasas_sat vs. Calorías')
     plt.legend(title='Sex')
     plt.grid(True)
     plt.savefig("img/1_grasas_calories_sex_reg.png")
@@ -136,9 +136,9 @@ def grasas_alcohol(df):
         subset = df[df['Sexo'] == sexo]
         plt.scatter(subset['Alcohol'], subset['Grasas_sat'], label=sexo, color=colors[sexo])
 
-    plt.xlabel('Alcohol Consumption')
+    plt.xlabel('Alcohol')
     plt.ylabel('Grasas Saturadas')
-    plt.title('Scatter Plot of Grasas Saturadas vs. Alcohol Consumption Colored by Sex')
+    plt.title('Grasas Saturadas vs. Alcohol')
     plt.legend(title='Sex')
     plt.grid(True)
     plt.savefig("img/1_alcohol_grasas.png")
@@ -169,6 +169,70 @@ def inferir_dato(calorias, sexo, params_matrix):
     return m * calorias + c
 
 
+def plt_calorias_alcohol_reg(df):
+    df['Sexo'] = df['Sexo'].map({'F': 'Female', 'M': 'Male'})
+
+    # Definir las categorías de calorías
+    def categorize_calories(row):
+        if row['Calorías'] < 1400:
+            return 'CAT 1'
+        elif 1400 <= row['Calorías'] <= 1700:
+            return 'CAT 2'
+        else:
+            return 'CAT 3'
+
+    # Crear una nueva columna 'Calorías_cat' para las categorías
+    df['Calorías_cat'] = df.apply(categorize_calories, axis=1)
+
+    # Colores para las combinaciones de sexo y categorías de calorías
+    colors = {
+        ('Female', 'CAT 1'): 'blue',
+        ('Female', 'CAT 2'): 'cyan',
+        ('Female', 'CAT 3'): 'lightblue',
+        ('Male', 'CAT 1'): 'red',
+        ('Male', 'CAT 2'): 'orange',
+        ('Male', 'CAT 3'): 'salmon'
+    }
+
+    plt.figure(figsize=(10, 6))
+
+    # Graficar cada conjunto con un color diferente y calcular la regresión lineal
+    for (sexo, calorías_cat), subset in df.groupby(['Sexo', 'Calorías_cat']):
+        # Asegurarse de que los datos sean numéricos y eliminar NaNs
+        X = pd.to_numeric(subset['Calorías'], errors='coerce').dropna().values
+        Y = pd.to_numeric(subset['Alcohol'], errors='coerce').dropna().values
+
+        if len(X) > 1 and len(Y) > 1:  # Asegurarse de que haya suficientes datos para la regresión
+            plt.scatter(X, Y, 
+                        label=f'{sexo} ({calorías_cat})', 
+                        color=colors[(sexo, calorías_cat)])
+
+            # Calcular la regresión lineal
+            coeffs = np.polyfit(X, Y, 1)  # coeficientes de la recta
+            slope, intercept = coeffs
+
+            # Imprimir los valores de la regresión
+            print(f"Regresión lineal para {sexo} ({calorías_cat}):")
+            print(f"  Pendiente: {slope}")
+            print(f"  Ordenada: {intercept}\n")
+
+            # Graficar la línea de regresión
+            plt.plot(X, slope * X + intercept, color=colors[(sexo, calorías_cat)], linestyle='--')
+
+    # Líneas verticales
+    plt.axvline(x=1400, color="black")
+    plt.axvline(x=1700, color="black")
+
+    # Configuración de la gráfica
+    plt.xlabel('Calorías')
+    plt.ylabel('Alcohol')
+    plt.title('Alcohol vs. Calorías')
+    plt.legend(title='Category')
+    plt.grid(True)
+
+    # Guardar la imagen
+    plt.savefig("img/1_alcohol_calories_reg.png")
+
 
 def main():
     df = input_remove()
@@ -176,11 +240,13 @@ def main():
     plt_calorias_alcohol_sex(df.copy())
     plt_grasas_calorias(df.copy())
     grasas_alcohol(df.copy())
-    params_matrix = plt_grasas_calorias_reg(df)
+    params_matrix = plt_grasas_calorias_reg(df.copy())
     calorias = 1000
     sexo = 'F'
     salida = inferir_dato(calorias, sexo, params_matrix)
     print("Con " + str(calorias) + " calorias y " + sexo + ": " + str(salida) + " grasas") 
+
+    plt_calorias_alcohol_reg(df.copy())
 
 
 
