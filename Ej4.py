@@ -50,11 +50,8 @@ def scatter_cat(df):
 
 
 def input_remove():
-    file_path = "data/DatosAlimenticios.xls"
-    df = pd.read_excel(file_path)
-    df.replace(999.99, pd.NA, inplace=True)
-    df = df.dropna()
-    
+    file_path = "data/DatosAlimenticios_cambiados.csv"
+    df = pd.read_csv(file_path)
     return df
 
 def main():

@@ -10,7 +10,7 @@ def calcular_regresion_lineal(x, y):
     return m, c
 
 
-def plt_calorias_alcohol(df):
+def plt_calorias_alcohol(df, name):
     # Define the bins and labels
     bins = [0, 1100, 1700, float('inf')]
     labels = ['CAT 1', 'CAT 2', 'CAT 3']
@@ -32,7 +32,7 @@ def plt_calorias_alcohol(df):
     plt.title('Alcohol vs. Calorías')
     plt.legend(title='Categoría')
     plt.grid(True)
-    plt.savefig("img/1_alcohol_calories_cat.png")
+    plt.savefig(name)
 
 
 def plt_calorias_alcohol_sex(df):
@@ -155,8 +155,18 @@ def input_remove():
     
     return df
 
+def input():
+    file_path = "data/DatosAlimenticios.xls"
 
-def inferir_dato(calorias, sexo, params_matrix):
+    df = pd.read_excel(file_path)
+    #df = pd.read_csv("data/DatosAlimenticios.csv")
+
+    #df.replace(999.99, pd.NA, inplace=True)
+    #df = df.dropna()
+    
+    return df
+
+def inferir_grasas(calorias, sexo, params_matrix):
     if sexo == 'F':
         row = 0
     elif sexo == 'M':
@@ -170,9 +180,10 @@ def inferir_dato(calorias, sexo, params_matrix):
 
 
 def plt_calorias_alcohol_reg(df):
+    regresion_values_f = []
+    regresion_values_m = []
     df['Sexo'] = df['Sexo'].map({'F': 'Female', 'M': 'Male'})
 
-    # Definir las categorías de calorías
     def categorize_calories(row):
         if row['Calorías'] < 1400:
             return 'CAT 1'
@@ -181,10 +192,8 @@ def plt_calorias_alcohol_reg(df):
         else:
             return 'CAT 3'
 
-    # Crear una nueva columna 'Calorías_cat' para las categorías
     df['Calorías_cat'] = df.apply(categorize_calories, axis=1)
 
-    # Colores para las combinaciones de sexo y categorías de calorías
     colors = {
         ('Female', 'CAT 1'): 'blue',
         ('Female', 'CAT 2'): 'cyan',
@@ -212,42 +221,87 @@ def plt_calorias_alcohol_reg(df):
             slope, intercept = coeffs
 
             # Imprimir los valores de la regresión
-            print(f"Regresión lineal para {sexo} ({calorías_cat}):")
-            print(f"  Pendiente: {slope}")
-            print(f"  Ordenada: {intercept}\n")
+            if sexo == "Female":
+                regresion_values_f.append([slope, intercept])
+            else:
+                regresion_values_m.append([slope, intercept])
 
             # Graficar la línea de regresión
             plt.plot(X, slope * X + intercept, color=colors[(sexo, calorías_cat)], linestyle='--')
 
-    # Líneas verticales
     plt.axvline(x=1400, color="black")
     plt.axvline(x=1700, color="black")
-
-    # Configuración de la gráfica
     plt.xlabel('Calorías')
     plt.ylabel('Alcohol')
     plt.title('Alcohol vs. Calorías')
     plt.legend(title='Category')
     plt.grid(True)
-
-    # Guardar la imagen
     plt.savefig("img/1_alcohol_calories_reg.png")
+
+    return regresion_values_f, regresion_values_m
+
+def inferir_alcohol(sexo, calorias ,regresion_values_f, regresion_values_m):
+    if sexo == 'F':
+        regresion_values = regresion_values_f
+    elif sexo == 'M':
+        regresion_values = regresion_values_m
+
+    if calorias < 1400:
+        cat = 0
+    elif calorias <= 1700:
+        cat = 1
+    else:
+        cat = 2
+
+    m = regresion_values[cat][0]
+    c = regresion_values[cat][1]
+
+    return m * calorias + c
+
+
+def modificar_alcohol(row, regresion_values_f, regresion_values_m):
+    if row['Alcohol'] == 999.99:
+        return inferir_alcohol(row['Sexo'], row['Calorías'], regresion_values_f, regresion_values_m)
+    else:
+        return row['Alcohol']
+
+def modificar_grasas(row, params_matrix):
+    if row['Grasas_sat'] == 999.99:
+        return inferir_grasas(row['Calorías'], row['Sexo'], params_matrix)
+    else:
+        return row['Grasas_sat']
+
+
+def replace_empty_data(df, params_matrix, regresion_values_f, regresion_values_m):
+    
+    df['Grasas_sat'] = df.apply(modificar_grasas, axis=1, args=(params_matrix,))
+    df['Alcohol'] = df.apply(modificar_alcohol, axis=1, args=(regresion_values_f, regresion_values_m))
+    return df
+
 
 
 def main():
     df = input_remove()
-    plt_calorias_alcohol(df.copy())
+    plt_calorias_alcohol(df.copy(), "img/1_alcohol_calories_cat.png")
     plt_calorias_alcohol_sex(df.copy())
     plt_grasas_calorias(df.copy())
     grasas_alcohol(df.copy())
+    
     params_matrix = plt_grasas_calorias_reg(df.copy())
-    calorias = 1000
-    sexo = 'F'
-    salida = inferir_dato(calorias, sexo, params_matrix)
-    print("Con " + str(calorias) + " calorias y " + sexo + ": " + str(salida) + " grasas") 
+    regresion_values_f, regresion_values_m = plt_calorias_alcohol_reg(df.copy())
 
-    plt_calorias_alcohol_reg(df.copy())
+    calorias = 1600
+    sexo = 'M'
+    grasas = inferir_grasas(calorias, sexo, params_matrix)
+    print("Con " + str(calorias) + " calorias y " + sexo + ": " + str(grasas) + " grasas") 
+    alcohol = inferir_alcohol(sexo, calorias ,regresion_values_f, regresion_values_m)
+    print("Con " + str(calorias) + " calorias y " + sexo + ": " + str(alcohol) + " alcohol") 
 
+    bad_input = input()
+    new_df = replace_empty_data(bad_input, params_matrix, regresion_values_f, regresion_values_m)
+    new_df.to_csv("data/DatosAlimenticios_cambiados.csv", index=False)
+
+    plt_calorias_alcohol(new_df.copy(), "img/1_alcohol_calories_cat_new.png")
 
 
 if __name__ == "__main__":

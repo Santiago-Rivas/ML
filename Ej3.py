@@ -2,13 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-file_path = "data/DatosAlimenticios.xls"
-df = pd.read_excel(file_path)
+file_path = "data/DatosAlimenticios_cambiados.csv"
+df = pd.read_csv(file_path)
 original_df = df
-# TODO: CAMBIAR Y USAR REGRESIONES
-df.replace(999.99, pd.NA, inplace=True)
-df = df.dropna()
-
 
 # Boxplot para 'Grasas' por sexo
 plt.figure(figsize=(10, 6))
