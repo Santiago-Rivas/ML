@@ -15,6 +15,10 @@ def linear_regression(x, y):
     b_0 = mean_y - b_1 * mean_x
     return b_0, b_1
 
+def multiple_regression(X, y):
+    columna_uno = np.ones((X.shape[0], 1))
+    X_matrix = np.column_stack((columna_uno, X))
+    return np.dot(np.dot(np.linalg.inv(np.dot(X_matrix.T, X_matrix)), X_matrix.T), y)
 
 def get_r_square(y_test, y_pred):
     y_mean = np.mean(y_test)
@@ -68,6 +72,9 @@ Radio_MSE = mean_square_error(test_df['Sales'], Radio_y_pred)
 print("Radio R^2\t", Radio_r_square)
 print("Radio MES\t", Radio_MSE)
 exit()
+
+# Calculo regresión múltiple
+b = multiple_regression(np.column_stack((TV, Newspaper, Radio)), Sales)
 
 
 # Create subplots
