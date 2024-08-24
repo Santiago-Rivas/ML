@@ -6,34 +6,68 @@ import matplotlib.pyplot as plt
 def mean(values):
     return sum(values) / len(values)
 
+
 def linear_regression(x, y):
     mean_x = mean(x)
     mean_y = mean(y)
-    b_1 = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y)) / sum((xi - mean_x) ** 2 for xi in x)
+    b_1 = sum((xi - mean_x) * (yi - mean_y)
+              for xi, yi in zip(x, y)) / sum((xi - mean_x) ** 2 for xi in x)
     b_0 = mean_y - b_1 * mean_x
     return b_0, b_1
 
+
+def get_r_square(y_test, y_pred):
+    y_mean = np.mean(y_test)
+    a = [(y_pre - y_val) ** 2 for y_pre, y_val in zip(y_pred, y_test)]
+    b = [(y_val - y_mean) ** 2 for y_val in y_test]
+    return 1 - (np.sum(a)/np.sum(b))
+
+
+def mean_square_error(y_test, y_predicted):
+    n = len(y_test)
+    return np.sum([(y_t - y_p) ** 2 for y_t, y_p in zip(y_test, y_predicted)])/n
+
+
 # Cargar el archivo CSV en un DataFrame
-df = pd.read_csv('Advertising.csv')
+df = pd.read_csv('data/Advertising.csv')
 
 # Shuffle the DataFrame rows
 shuffled_df = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 # Determine the split index
-split_index = int(0.8 * len(shuffled_df))  # 80% for training
+split_index = int(0.9 * len(shuffled_df))  # 80% for training
 
 # Split the DataFrame into training and testing sets
 train_df = shuffled_df[:split_index]
 test_df = shuffled_df[split_index:]
 
-TV = np.array(df['TV'])
-Newspaper = np.array(df['Radio'])
-Radio = np.array(df['Newspaper'])
-Sales = np.array(df['Sales'])
+TV_train = np.array(train_df['TV'])
+Newspaper_train = np.array(train_df['Radio'])
+Radio_train = np.array(train_df['Newspaper'])
+Sales_train = np.array(train_df['Sales'])
 
-print(linear_regression(TV, Sales))
-print(linear_regression(Newspaper, Sales))
-print(linear_regression(Radio, Sales))
+
+TV_b_0, TV_b_1 = linear_regression(TV_train, Sales_train)
+TV_y_pred = [x_test * TV_b_1 + TV_b_0 for x_test in np.array(test_df['TV'])]
+TV_r_square = get_r_square(np.array(test_df['Sales']), TV_y_pred)
+TV_MSE = mean_square_error(test_df['Sales'], TV_y_pred)
+print("TV R^2\t\t", TV_r_square)
+print("TV MES\t\t", TV_MSE)
+
+Newspaper_b_0, Newspaper_b_1 = linear_regression(Newspaper_train, Sales_train)
+Newspaper_y_pred = [x_test * Newspaper_b_1 + Newspaper_b_0 for x_test in np.array(test_df['Newspaper'])]
+Newspaper_r_square = get_r_square(np.array(test_df['Sales']), Newspaper_y_pred)
+Newspaper_MSE = mean_square_error(test_df['Sales'], Newspaper_y_pred)
+print("Newspaper R^2\t", Newspaper_r_square)
+print("Newspaper MES\t", Newspaper_MSE)
+
+Radio_b_0, Radio_b_1 = linear_regression(Radio_train, Sales_train)
+Radio_y_pred = [x_test * Radio_b_1 + Radio_b_0 for x_test in np.array(test_df['Radio'])]
+Radio_r_square = get_r_square(np.array(test_df['Sales']), Radio_y_pred)
+Radio_MSE = mean_square_error(test_df['Sales'], Radio_y_pred)
+print("Radio R^2\t", Radio_r_square)
+print("Radio MES\t", Radio_MSE)
+exit()
 
 
 # Create subplots
