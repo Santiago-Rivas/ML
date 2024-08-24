@@ -74,7 +74,7 @@ print("Radio MES\t", Radio_MSE)
 exit()
 
 # Calculo regresión múltiple
-b = multiple_regression(np.column_stack((TV, Newspaper, Radio)), Sales)
+b = multiple_regression(np.column_stack((TV_train, Newspaper_train, Radio_train)), Sales_train)
 
 
 # Create subplots
