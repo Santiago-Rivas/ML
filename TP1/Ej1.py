@@ -290,7 +290,7 @@ def main():
     params_matrix = plt_grasas_calorias_reg(df.copy())
     regresion_values_f, regresion_values_m = plt_calorias_alcohol_reg(df.copy())
 
-    calorias = 1600
+    calorias = 2334
     sexo = 'M'
     grasas = inferir_grasas(calorias, sexo, params_matrix)
     print("Con " + str(calorias) + " calorias y " + sexo + ": " + str(grasas) + " grasas") 
