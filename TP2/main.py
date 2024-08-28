@@ -35,6 +35,10 @@ def mean_square_error(y_test, y_predicted):
     n = len(y_test)
     return np.sum([(y_t - y_p) ** 2 for y_t, y_p in zip(y_test, y_predicted)])/n
 
+def mean_absolute_error(y_test, y_predicted):
+    n = len(y_test)
+    return np.sum([abs(y_t - y_p) for y_t, y_p in zip(y_test, y_predicted)])/n
+
 
 def get_adjusted_r_square(r_square, n, q):
     return 1 - ((1 - r_square) * (n - 1) / (n - q))
@@ -92,11 +96,13 @@ TV_b_0, TV_b_1 = linear_regression(TV_train, Sales_train)
 TV_y_pred = [x_test * TV_b_1 + TV_b_0 for x_test in np.array(test_df['TV'])]
 TV_r_square = get_r_square(np.array(Sales_test), TV_y_pred)
 TV_MSE = mean_square_error(test_df['Sales'], TV_y_pred)
+TV_MAE = mean_absolute_error(test_df['Sales'], TV_y_pred)
 
 plot_real_vs_reg(TV_test, Sales_test, TV_b_0, TV_b_1, "TV")
 
 print("TV R^2\t\t", TV_r_square)
 print("TV MSE\t\t", TV_MSE)
+print("TV MAE\t\t", TV_MAE)
 
 Newspaper_b_0, Newspaper_b_1 = linear_regression(Newspaper_train, Sales_train)
 Newspaper_y_pred = [x_test * Newspaper_b_1 +
@@ -107,8 +113,10 @@ plot_real_vs_reg(Newspaper_test, Sales_test,
 
 Newspaper_r_square = get_r_square(np.array(test_df['Sales']), Newspaper_y_pred)
 Newspaper_MSE = mean_square_error(test_df['Sales'], Newspaper_y_pred)
+Newspaper_MAE = mean_absolute_error(test_df['Sales'], Newspaper_y_pred)
 print("Newspaper R^2\t", Newspaper_r_square)
 print("Newspaper MSE\t", Newspaper_MSE)
+print("Newspaper MAE\t", Newspaper_MAE)
 
 Radio_b_0, Radio_b_1 = linear_regression(Radio_train, Sales_train)
 Radio_y_pred = [x_test * Radio_b_1 +
@@ -118,8 +126,10 @@ plot_real_vs_reg(Radio_test, Sales_test, Radio_b_0, Radio_b_1, "Radio")
 
 Radio_r_square = get_r_square(np.array(test_df['Sales']), Radio_y_pred)
 Radio_MSE = mean_square_error(test_df['Sales'], Radio_y_pred)
+Radio_MAE = mean_absolute_error(test_df['Sales'], Radio_y_pred)
 print("Radio R^2\t", Radio_r_square)
 print("Radio MSE\t", Radio_MSE)
+print("Radio MAE\t", Radio_MAE)
 
 print()
 TV_train = feature_scaling(np.array(train_df['TV']))
@@ -147,29 +157,43 @@ print("Multi Reg MSE\t\t", multi_reg_MSE)
 print("β Coefs\t\t\t", b)
 
 
-exit()
 
-# Create subplots
-fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(8, 12))
+fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 10))
 
-# Plot each variable against Sales
-axes[0].scatter(TV, Sales, color='blue')
-axes[0].set_title('Sales vs TV')
-axes[0].set_xlabel('TV')
-axes[0].set_ylabel('Sales')
+# Graficar cada variable contra Sales
+axes[0, 0].scatter(shuffled_df["TV"], shuffled_df["Sales"], color='blue')
+axes[0, 0].set_title('Sales vs TV')
+axes[0, 0].set_xlabel('TV')
+axes[0, 0].set_ylabel('Sales')
 
-axes[1].scatter(Radio, Sales, color='green')
-axes[1].set_title('Sales vs Radio')
-axes[1].set_xlabel('Radio')
-axes[1].set_ylabel('Sales')
+axes[0, 1].scatter(shuffled_df["Radio"], shuffled_df["Sales"], color='green')
+axes[0, 1].set_title('Sales vs Radio')
+axes[0, 1].set_xlabel('Radio')
+axes[0, 1].set_ylabel('Sales')
 
-axes[2].scatter(Newspaper, Sales, color='red')
-axes[2].set_title('Sales vs Newspaper')
-axes[2].set_xlabel('Newspaper')
-axes[2].set_ylabel('Sales')
+axes[0, 2].scatter(shuffled_df["Newspaper"], shuffled_df["Sales"], color='red')
+axes[0, 2].set_title('Sales vs Newspaper')
+axes[0, 2].set_xlabel('Newspaper')
+axes[0, 2].set_ylabel('Sales')
 
-# Adjust layout
+# Graficar las relaciones entre las otras variables
+axes[1, 0].scatter(shuffled_df["TV"], shuffled_df["Radio"], color='purple')
+axes[1, 0].set_title('Radio vs TV')
+axes[1, 0].set_xlabel('TV')
+axes[1, 0].set_ylabel('Radio')
+
+axes[1, 1].scatter(shuffled_df["TV"], shuffled_df["Newspaper"], color='orange')
+axes[1, 1].set_title('Newspaper vs TV')
+axes[1, 1].set_xlabel('TV')
+axes[1, 1].set_ylabel('Newspaper')
+
+axes[1, 2].scatter(shuffled_df["Radio"], shuffled_df["Newspaper"], color='brown')
+axes[1, 2].set_title('Newspaper vs Radio')
+axes[1, 2].set_xlabel('Radio')
+axes[1, 2].set_ylabel('Newspaper')
+
+# Ajustar el layout para evitar solapamientos
 plt.tight_layout()
 
-# Show the plot
-plt.savefig("./plt.png")
+# Guardar la gráfica
+plt.savefig("./output/plt.png")
