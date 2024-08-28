@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.stats as stats
 
 
 def feature_scaling(x):
@@ -43,6 +44,41 @@ def mean_absolute_error(y_test, y_predicted):
 def get_adjusted_r_square(r_square, n, q):
     return 1 - ((1 - r_square) * (n - 1) / (n - q))
 
+
+def fisher_test(y_test, y_pred, X):
+
+    y_test = np.array(y_test)
+    y_pred = np.array(y_pred)
+    n = len(y_test)  # Número de observaciones
+    p = X.shape[1]   # Número de variables independientes (incluyendo la constante)
+    
+    y_mean = np.mean(y_test)
+    
+    TSS = np.sum((y_test - y_mean) ** 2)
+    
+    # Suma de cuadrados del error (SSE)
+    RSS = np.sum((y_test - y_pred) ** 2)
+    
+    df_res = n-p-1
+    
+    F_statistic = ((TSS - RSS)/ p) / (RSS / df_res)
+    
+    p_value = 1 - stats.f.cdf(F_statistic, p, df_res)
+
+    
+    return F_statistic, p_value
+
+def plot_comparison(array_1, array_2):
+    x = list(range(1, 21))
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(x, array_1, color='blue', label='Sales test')
+    plt.scatter(x, array_2, color='red', label='Predicted')
+   
+    plt.legend()
+    plt.xticks([])
+
+    plt.savefig(f"output/plot_multiple.png")
 
 def plot_real_vs_reg(x_test, y_test, b_0, b_1, variable_name):
     # Create a figure and axis
@@ -143,8 +179,9 @@ Radio_test = feature_scaling(np.array(test_df['Newspaper']))
 Sales_test = feature_scaling(np.array(test_df['Sales']))
 
 # Calculo regresión múltiple
-b = multiple_regression(np.column_stack(
-    (TV_train, Newspaper_train, Radio_train)), Sales_train)
+X = np.column_stack(
+    (TV_train, Newspaper_train, Radio_train))
+b = multiple_regression(X, Sales_train)
 y_pred = [b[0] + b[1] * tv + b[2] * newspaper + b[3] * radio for tv,
           newspaper, radio in zip(TV_test, Newspaper_test, Radio_test)]
 multi_reg_r_square = get_r_square(Sales_test, y_pred)
@@ -156,7 +193,12 @@ print("Multi Reg Adj R^2\t", multi_reg_adjusted_r_square)
 print("Multi Reg MSE\t\t", multi_reg_MSE)
 print("β Coefs\t\t\t", b)
 
+plot_comparison(Sales_test, y_pred)
 
+F_statistic, p_value = fisher_test(Sales_test, y_pred, X)
+
+print("F: " + str(F_statistic))
+print("p_value: " + str(p_value))
 
 fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 10))
 
