@@ -207,16 +207,25 @@ axes[0, 0].scatter(shuffled_df["TV"], shuffled_df["Sales"], color='blue')
 axes[0, 0].set_title('Sales vs TV')
 axes[0, 0].set_xlabel('TV')
 axes[0, 0].set_ylabel('Sales')
+x_vals = np.array(axes[0, 0].get_xlim())
+y_vals = TV_b_0 + TV_b_1 * x_vals
+axes[0, 0].plot(x_vals, y_vals, color='grey', linewidth=2.5)
 
 axes[0, 1].scatter(shuffled_df["Radio"], shuffled_df["Sales"], color='green')
 axes[0, 1].set_title('Sales vs Radio')
 axes[0, 1].set_xlabel('Radio')
 axes[0, 1].set_ylabel('Sales')
+x_vals = np.array(axes[0, 1].get_xlim())
+y_vals = Radio_b_0 + Radio_b_1 * x_vals
+axes[0, 1].plot(x_vals, y_vals, color='grey', linewidth=2.5)
 
 axes[0, 2].scatter(shuffled_df["Newspaper"], shuffled_df["Sales"], color='red')
 axes[0, 2].set_title('Sales vs Newspaper')
 axes[0, 2].set_xlabel('Newspaper')
 axes[0, 2].set_ylabel('Sales')
+x_vals = np.array(axes[0, 2].get_xlim())
+y_vals = Newspaper_b_0 + Newspaper_b_1 * x_vals
+axes[0, 2].plot(x_vals, y_vals, color='grey', linewidth=2.5)
 
 # Graficar las relaciones entre las otras variables
 axes[1, 0].scatter(shuffled_df["TV"], shuffled_df["Radio"], color='purple')
