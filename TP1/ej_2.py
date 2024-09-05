@@ -4,6 +4,8 @@ import os
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import string
+import snowballstemmer
 
 
 def show_matrix(y_test, y_pred, categories):
@@ -73,10 +75,19 @@ def compute_confusion_matrix(y_true, y_pred, categories):
 
     return cm
 
+class Tokenizer:
+    def __init__(self, filter, sanitizer):
+        self.filter = filter
+        self.sanitizer = sanitizer
+
+    def apply(self, text):
+        return [self.sanitizer(word) for word in text.split() if self.filter(word)]
+
 
 class NaiveBayesClassifier:
-    def __init__(self):
+    def __init__(self, tokenizer):
         self.vocab = set()
+        self.tokenizer = tokenizer
         self.class_priors = {}
         self.word_counts = {}
         self.class_word_counts = {}
@@ -84,7 +95,8 @@ class NaiveBayesClassifier:
     def fit(self, X, y):
         for i in range(len(X)):
             label = y.iloc[i]
-            words = self._tokenize(X.iloc[i])
+            #words = self._tokenize(X.iloc[i])
+            words = self.tokenizer.apply(X.iloc[i])
             self.vocab.update(words)
             if label not in self.class_word_counts:
                 self.class_word_counts[label] = {}
@@ -112,7 +124,8 @@ class NaiveBayesClassifier:
         return text.lower().split()
 
     def _calculate_posteriors(self, text):
-        words = self._tokenize(text)
+        #words = self._tokenize(text)
+        words = self.tokenizer.apply(text)
         posteriors = {}
 
         for label in self.class_priors:
@@ -161,8 +174,10 @@ def read_input(path='data/Noticias_argentinas'):
 
 
 def no_category_filter(df):
+    #df.loc[df["categoria"] == "Destacadas", "categoria"] = "Noticias destacadas"
     no_cat = df[df["categoria"].isna()]
     with_cat = df[df["categoria"].notna()]
+    #with_cat = df[df["categoria"].notna() & (df["categoria"] != "Noticias destacadas")]
     # print(no_cat)
     # print(with_cat)
     return no_cat, with_cat
@@ -290,6 +305,32 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
     print(f"Exactitud (Accuracy): {accuracy:.2f}")
     print(f"F1 Score (Macro Average): {macro_f1:.2f}")
 
+
+def remove_short_words(word):
+    return len(word) > 3
+
+def remove_non_alpha(word):
+    return word.isalpha()
+
+def complex_filter(word):
+    return remove_short_words(word) and remove_non_alpha(word)
+
+def to_lower(word):
+    return word.lower()
+
+def remove_punctuation(word):
+    return word.translate(str.maketrans('', '', string.punctuation))
+
+stemmer = snowballstemmer.stemmer('spanish')
+
+def stemming_es(palabra):
+    return stemmer.stemWord(palabra)
+
+def complex_sanitize(word):
+    return to_lower(remove_punctuation(word))
+
+
+
 def main():
     df = read_input()
     df_no_cat, df_categories = no_category_filter(df)
@@ -297,7 +338,8 @@ def main():
     x_train, y_train = split_x_y(train_set)
     x_test, y_test = split_x_y(test_set)
 
-    nb_classifier = NaiveBayesClassifier()
+    tokenizer = Tokenizer(complex_filter, complex_sanitize)
+    nb_classifier = NaiveBayesClassifier(tokenizer)
     nb_classifier.fit(x_train, y_train)
 
     categories = extract_categories(train_set)
