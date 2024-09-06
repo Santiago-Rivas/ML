@@ -320,12 +320,12 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         FN = sum(confusion_matrix[i, :]) - TP  # Falsos negativos
         TN = np.sum(confusion_matrix) - (TP + FP + FN)  # Verdaderos negativos
         
-        plot_confusion_matrix(category, TP, FN, FP, TN)
+        #plot_confusion_matrix(category, TP, FN, FP, TN)
 
         # Precisión para la clase actual
         if TP + FP > 0:
             precision = TP / (TP + FP)
-            print(category + " Precision: " + str(precision))
+            #print(category + " Precision: " + str(precision))
         else:
             precision = 0
         precision_per_class.append(precision)
@@ -333,7 +333,7 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         # Recall (Sensibilidad) para la clase actual
         if TP + FN > 0:
             recall = TP / (TP + FN)
-            print(category + " recall: " + str(recall))
+            #print(category + " recall: " + str(recall))
         else:
             recall = 0
         recall_per_class.append(recall)
@@ -341,7 +341,7 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         # F1 Score para la clase actual
         if precision + recall > 0:
             f1 = 2 * (precision * recall) / (precision + recall)
-            print(category + " f1: " + str(f1))
+            #print(category + " f1: " + str(f1))
         else:
             f1 = 0
         f1_per_class.append(f1)
@@ -351,7 +351,7 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         sum_FN += FN
         sum_TN += TN
     
-    plot_confusion_matrix("Total", sum_TP, sum_FN, sum_FP, sum_TN)
+    #plot_confusion_matrix("Total", sum_TP, sum_FN, sum_FP, sum_TN)
 
     # Cálculo de macro-averages
     macro_precision = np.mean(precision_per_class)
@@ -433,7 +433,6 @@ def show_matrix(y_test, y_pred, categories):
         pred_index = category_to_index[pred_label]
         confusion_matrix[true_index, pred_index] += 1
 
-    plt.figure(figsize=(8, 6))
     # Paso 5: Visualizar la matriz de confusión
     sns.heatmap(confusion_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=categories, yticklabels=categories)
 
