@@ -1,69 +1,13 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
 import os
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import string
 import snowballstemmer
+import warnings
 
-from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
-
-def plot_roc_curve(y_test, y_pred, categories):
-    # Convertir las etiquetas verdaderas y predichas en formato binarizado para cada clase
-    y_test_bin = label_binarize(y_test, classes=categories)
-    y_pred_bin = label_binarize(y_pred, classes=categories)
-
-    # Número de clases
-    n_classes = len(categories)
-
-    # Crear una figura
-    plt.figure()
-
-    # Colores para cada curva
-    colors = plt.cm.get_cmap('tab10', n_classes)
-
-    for i in range(n_classes):
-        # Obtener las curvas ROC
-        fpr, tpr, _ = roc_curve(y_test_bin[:, i], y_pred_bin[:, i])
-        roc_auc = auc(fpr, tpr)
-
-        # Graficar la curva ROC
-        plt.plot(fpr, tpr, color=colors(i), lw=2, label=f'Class {categories[i]} (AUC = {roc_auc:.2f})')
-
-    # Configurar el gráfico
-    plt.plot([0, 1], [0, 1], 'k--', lw=2)
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve')
-    plt.legend(loc='lower right')
-    plt.show()
-
-def show_matrix(y_test, y_pred, categories):
-
-    # Paso 2: Crear una matriz vacía con ceros para almacenar las frecuencias
-    matrix_size = len(categories)
-    confusion_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
-
-    # Paso 3: Crear un mapeo entre las categorías y los índices de la matriz
-    category_to_index = {category: i for i, category in enumerate(categories)}
-
-    # Paso 4: Llenar la matriz de confusión
-    for true_label, pred_label in zip(y_test, y_pred):
-        true_index = category_to_index[true_label]
-        pred_index = category_to_index[pred_label]
-        confusion_matrix[true_index, pred_index] += 1
-
-    # Paso 5: Visualizar la matriz de confusión
-    sns.heatmap(confusion_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=categories, yticklabels=categories, vmax=500)
-
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title('Confusion Matrix without scikit-learn')
-    plt.show()
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 # Calculate evaluation metrics
@@ -161,11 +105,8 @@ class NaiveBayesClassifier:
         TN = 0
         for index in range(len(X)):
             posteriors = self._calculate_posteriors(X.iloc[index])
-            #predictions.append(max(posteriors, key=posteriors.get))
             cat_prob = posteriors[category]  # Obtiene el valor máximo asociado a esa clave
             total_sum = sum(posteriors.values())
-            #max_key = max(posteriors, key=posteriors.get)  # Encuentra la clave con el valor máximo
-            #print(max_key, max_value, max_value/total_sum)
             if cat_prob/total_sum > umbral:  # Compara si el valor máximo es mayor a 'x'
                 if y.iloc[index] == category:
                     TP+=1
@@ -232,25 +173,57 @@ def read_input(path='data/Noticias_argentinas'):
 
 
 def no_category_filter(df):
-    #df.loc[df["categoria"] == "Destacadas", "categoria"] = "Noticias destacadas"
+    df.loc[df["categoria"] == "Destacadas", "categoria"] = "Noticias destacadas"
     with_cat = df[df["categoria"].notna()]
     df["categoria"] = df["categoria"].fillna("Sin categoría")
-    #with_cat = df[df["categoria"].notna() & (df["categoria"] != "Noticias destacadas")]
+    #with_cat = df[df["categoria"].notna() & (df["categoria"] != "Destacadas")]
     # print(no_cat)
     # print(with_cat)
     return df, with_cat
 
 
+def train_test_split(df, test_size=0.3, random_state=None, stratify_column='categoria'):
+    if random_state:
+        np.random.seed(random_state)
+    
+    # Inicializamos listas vacías para entrenamiento y prueba
+    train_set = pd.DataFrame(columns=df.columns)
+    test_set = pd.DataFrame(columns=df.columns)
+
+    # Estratificar los datos según la columna
+    for category in df[stratify_column].unique():
+        category_subset = df[df[stratify_column] == category]
+        category_subset = category_subset.sample(frac=1)  # Mezclar los datos de esa categoría
+
+        # Dividimos según el tamaño del conjunto de prueba
+        split_idx = int(len(category_subset) * (1 - test_size))
+        train_subset = category_subset[:split_idx]
+        test_subset = category_subset[split_idx:]
+
+        # Eliminar filas completamente vacías (all-NA) antes de concatenar
+        train_subset = train_subset.dropna(how='all', axis=0)
+        test_subset = test_subset.dropna(how='all', axis=0)
+
+        # Solo concatenar si los subconjuntos no están vacíos
+        if not train_subset.empty:
+            train_set = pd.concat([train_set, train_subset], ignore_index=True)
+        if not test_subset.empty:
+            test_set = pd.concat([test_set, test_subset], ignore_index=True)
+
+    # Mezclamos nuevamente ambos conjuntos
+    train_set = train_set.sample(frac=1).reset_index(drop=True)
+    test_set = test_set.sample(frac=1).reset_index(drop=True)
+
+    return train_set, test_set
+
+
 def split_train_test(df):
     RANDOM_STATE = 42
 
-    train_set, temp_set = train_test_split(df, test_size=0.3, random_state=RANDOM_STATE, stratify=df['categoria'])
-
-    test_set, val_set = train_test_split(temp_set, test_size=0.5, random_state=RANDOM_STATE, stratify=temp_set['categoria'])
+    train_set, test_set = train_test_split(df, test_size=0.2, random_state=RANDOM_STATE, stratify_column='categoria')
 
     train_len = len(train_set)
     test_len = len(test_set)
-    val_len = len(val_set)
 
     # print("Training set size:", train_len)
     # print("Testing set size:", test_len)
@@ -275,7 +248,7 @@ def split_train_test(df):
     # print("\nCategory distribution in the Validation set:")
     # print(val_set['categoria'].value_counts() / val_len)
 
-    return train_set, test_set, val_set
+    return train_set, test_set
 
 def extract_categories(df):
     categories = df['categoria'].unique()
@@ -303,6 +276,22 @@ def values_matrix(y_test, y_pred, categories):
         print(f"{category}: {values}")
 
 
+def plot_confusion_matrix(title, true_positive, false_negative, false_positive, true_negative):
+    # Crear la matriz de confusión
+    confusion_matrix = np.array([[true_positive, false_negative],
+                                 [false_positive, true_negative]])
+    
+    # Crear el heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(confusion_matrix, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=['Predicted Positive', 'Predicted Negative'], 
+                yticklabels=['Actual Positive', 'Actual Negative'])
+    
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title(title)
+    plt.show()
+
 def macroaverage_values_matrix(y_test, y_pred, categories):
     # Crear una matriz vacía con ceros para almacenar las frecuencias
     matrix_size = len(categories)
@@ -320,6 +309,10 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
     recall_per_class = []
     f1_per_class = []
 
+    sum_TP = 0
+    sum_FP = 0
+    sum_FN = 0
+    sum_TN = 0
     # Calcular las métricas por clase
     for i, category in enumerate(categories):
         TP = confusion_matrix[i, i]  # Verdaderos positivos
@@ -327,9 +320,12 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         FN = sum(confusion_matrix[i, :]) - TP  # Falsos negativos
         TN = np.sum(confusion_matrix) - (TP + FP + FN)  # Verdaderos negativos
         
+        plot_confusion_matrix(category, TP, FN, FP, TN)
+
         # Precisión para la clase actual
         if TP + FP > 0:
             precision = TP / (TP + FP)
+            print(category + " Precision: " + str(precision))
         else:
             precision = 0
         precision_per_class.append(precision)
@@ -337,6 +333,7 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         # Recall (Sensibilidad) para la clase actual
         if TP + FN > 0:
             recall = TP / (TP + FN)
+            print(category + " recall: " + str(recall))
         else:
             recall = 0
         recall_per_class.append(recall)
@@ -344,9 +341,17 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         # F1 Score para la clase actual
         if precision + recall > 0:
             f1 = 2 * (precision * recall) / (precision + recall)
+            print(category + " f1: " + str(f1))
         else:
             f1 = 0
         f1_per_class.append(f1)
+
+        sum_TP += TP
+        sum_FP += FP
+        sum_FN += FN
+        sum_TN += TN
+    
+    plot_confusion_matrix("Total", sum_TP, sum_FN, sum_FP, sum_TN)
 
     # Cálculo de macro-averages
     macro_precision = np.mean(precision_per_class)
@@ -387,6 +392,58 @@ def stemming_es(palabra):
 def complex_sanitize(word):
     return to_lower(remove_punctuation(word))
 
+def show_matrix(y_test, y_pred, categories):
+    # Crear una matriz vacía con ceros para almacenar las frecuencias
+    matrix_size = len(categories)
+    confusion_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
+
+    # Crear un mapeo entre las categorías y los índices de la matriz
+    category_to_index = {category: i for i, category in enumerate(categories)}
+
+    # Llenar la matriz de confusión
+    for true_label, pred_label in zip(y_test, y_pred):
+        true_index = category_to_index[true_label]
+        pred_index = category_to_index[pred_label]
+        confusion_matrix[true_index, pred_index] += 1
+
+    # Convertir a porcentajes por fila (dividiendo cada fila por la suma de la fila)
+    confusion_matrix_percentage = confusion_matrix.astype(float) / confusion_matrix.sum(axis=1)[:, np.newaxis] * 100
+
+    # Visualizar la matriz de confusión
+    sns.heatmap(confusion_matrix_percentage, annot=True, fmt=".2f", cmap="Blues", 
+                xticklabels=categories, yticklabels=categories, vmax=100)
+
+    plt.xlabel('Predicted', fontsize=14)
+    plt.ylabel('True', fontsize=14)
+    plt.title('Confusion Matrix as Percentages', fontsize=16)
+    plt.xticks(rotation=45, ha='right')  # Rotar etiquetas de las columnas
+    plt.yticks(rotation=0)  # Asegurar que las etiquetas de las filas estén horizontales
+    plt.show()
+
+    # Paso 2: Crear una matriz vacía con ceros para almacenar las frecuencias
+    matrix_size = len(categories)
+    confusion_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
+
+    # Paso 3: Crear un mapeo entre las categorías y los índices de la matriz
+    category_to_index = {category: i for i, category in enumerate(categories)}
+
+    # Paso 4: Llenar la matriz de confusión
+    for true_label, pred_label in zip(y_test, y_pred):
+        true_index = category_to_index[true_label]
+        pred_index = category_to_index[pred_label]
+        confusion_matrix[true_index, pred_index] += 1
+
+    plt.figure(figsize=(8, 6))
+    # Paso 5: Visualizar la matriz de confusión
+    sns.heatmap(confusion_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=categories, yticklabels=categories)
+
+    plt.xlabel('Predicted', fontsize=14)
+    plt.ylabel('True', fontsize=14)
+    plt.title('Confusion Matrix', fontsize=16)
+    plt.xticks(rotation=45, ha='right')  # Rotar etiquetas de las columnas
+    plt.yticks(rotation=0)  # Asegurar que las etiquetas de las filas estén horizontales
+    plt.show()
+
 
 def roc(x_test, y_test, categories, nb_classifier):
     thresholds = np.linspace(0.0, 1.0, 11)
@@ -402,7 +459,6 @@ def roc(x_test, y_test, categories, nb_classifier):
         # Probar el clasificador para cada umbral
         for threshold in thresholds:
             TP, FP, FN, TN = nb_classifier.classify(x_test, y_test, threshold, category)
-            total = TP + FP  # Suma total de TP y FP
             TP_percentage = TP / (TP + FN)
             FP_percentage = FP / (FP + TN)
             
@@ -413,6 +469,7 @@ def roc(x_test, y_test, categories, nb_classifier):
     
     plt.xlabel('Taza de Falsos Positivos')
     plt.ylabel('Taza de Verdaderos Positivos')
+    plt.xscale('log')
     plt.title('Taza de FP vs Taza de TP para diferentes umbrales')
     plt.legend(title='Categoría', loc='best')
     plt.grid(False)
@@ -422,7 +479,7 @@ def roc(x_test, y_test, categories, nb_classifier):
 def main():
     df = read_input()
     df_no_cat, df_categories = no_category_filter(df)
-    train_set, test_set, val_set = split_train_test(df_categories)
+    train_set, test_set = split_train_test(df_categories)
     x_train, y_train = split_x_y(train_set)
     x_test, y_test = split_x_y(test_set)
 
@@ -435,6 +492,7 @@ def main():
 
     show_matrix(y_test, y_pred, categories)
     macroaverage_values_matrix(y_test, y_pred, categories)
+
     #values_matrix(y_test, y_pred, categories)
 
     # OJO, DEMORA MUCHO
