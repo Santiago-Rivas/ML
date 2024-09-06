@@ -7,6 +7,40 @@ import matplotlib.pyplot as plt
 import string
 import snowballstemmer
 
+from sklearn.metrics import roc_curve, auc
+from sklearn.preprocessing import label_binarize
+
+def plot_roc_curve(y_test, y_pred, categories):
+    # Convertir las etiquetas verdaderas y predichas en formato binarizado para cada clase
+    y_test_bin = label_binarize(y_test, classes=categories)
+    y_pred_bin = label_binarize(y_pred, classes=categories)
+
+    # Número de clases
+    n_classes = len(categories)
+
+    # Crear una figura
+    plt.figure()
+
+    # Colores para cada curva
+    colors = plt.cm.get_cmap('tab10', n_classes)
+
+    for i in range(n_classes):
+        # Obtener las curvas ROC
+        fpr, tpr, _ = roc_curve(y_test_bin[:, i], y_pred_bin[:, i])
+        roc_auc = auc(fpr, tpr)
+
+        # Graficar la curva ROC
+        plt.plot(fpr, tpr, color=colors(i), lw=2, label=f'Class {categories[i]} (AUC = {roc_auc:.2f})')
+
+    # Configurar el gráfico
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve')
+    plt.legend(loc='lower right')
+    plt.show()
 
 def show_matrix(y_test, y_pred, categories):
 
@@ -120,6 +154,30 @@ class NaiveBayesClassifier:
             predictions.append(max(posteriors, key=posteriors.get))
         return predictions
 
+    def classify(self, X, y, umbral, category):
+        TP = 0
+        FP = 0
+        FN = 0
+        TN = 0
+        for index in range(len(X)):
+            posteriors = self._calculate_posteriors(X.iloc[index])
+            #predictions.append(max(posteriors, key=posteriors.get))
+            cat_prob = posteriors[category]  # Obtiene el valor máximo asociado a esa clave
+            total_sum = sum(posteriors.values())
+            #max_key = max(posteriors, key=posteriors.get)  # Encuentra la clave con el valor máximo
+            #print(max_key, max_value, max_value/total_sum)
+            if cat_prob/total_sum > umbral:  # Compara si el valor máximo es mayor a 'x'
+                if y.iloc[index] == category:
+                    TP+=1
+                else:
+                    FP+=1
+            else:
+                if y.iloc[index] == category:
+                    FN+=1
+                else:
+                    TN+=1
+        return TP, FP, FN, TN
+
     def _tokenize(self, text):
         return text.lower().split()
 
@@ -175,12 +233,12 @@ def read_input(path='data/Noticias_argentinas'):
 
 def no_category_filter(df):
     #df.loc[df["categoria"] == "Destacadas", "categoria"] = "Noticias destacadas"
-    no_cat = df[df["categoria"].isna()]
     with_cat = df[df["categoria"].notna()]
+    df["categoria"] = df["categoria"].fillna("Sin categoría")
     #with_cat = df[df["categoria"].notna() & (df["categoria"] != "Noticias destacadas")]
     # print(no_cat)
     # print(with_cat)
-    return no_cat, with_cat
+    return df, with_cat
 
 
 def split_train_test(df):
@@ -330,6 +388,36 @@ def complex_sanitize(word):
     return to_lower(remove_punctuation(word))
 
 
+def roc(x_test, y_test, categories, nb_classifier):
+    thresholds = np.linspace(0.0, 1.0, 11)
+
+    # Crear el gráfico FP vs TP en porcentajes
+    plt.figure(figsize=(8, 6))
+
+    for category in categories:
+        # Listas para guardar los porcentajes de TP y FP
+        TP_percentages = []
+        FP_percentages = []
+
+        # Probar el clasificador para cada umbral
+        for threshold in thresholds:
+            TP, FP, FN, TN = nb_classifier.classify(x_test, y_test, threshold, category)
+            total = TP + FP  # Suma total de TP y FP
+            TP_percentage = TP / (TP + FN)
+            FP_percentage = FP / (FP + TN)
+            
+            TP_percentages.append(TP_percentage)
+            FP_percentages.append(FP_percentage)
+
+        plt.plot(FP_percentages, TP_percentages, marker='o', linestyle='-', label=category)
+    
+    plt.xlabel('Taza de Falsos Positivos')
+    plt.ylabel('Taza de Verdaderos Positivos')
+    plt.title('Taza de FP vs Taza de TP para diferentes umbrales')
+    plt.legend(title='Categoría', loc='best')
+    plt.grid(False)
+    plt.show()
+
 
 def main():
     df = read_input()
@@ -349,6 +437,8 @@ def main():
     macroaverage_values_matrix(y_test, y_pred, categories)
     #values_matrix(y_test, y_pred, categories)
 
+    # OJO, DEMORA MUCHO
+    #roc(x_test, y_test, categories, nb_classifier)
 
 
 if __name__ == '__main__':
