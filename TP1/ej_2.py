@@ -10,7 +10,6 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-# Calculate evaluation metrics
 def compute_metrics(confusion_matrix):
     metrics = {}
     for category, values in confusion_matrix.items():
@@ -43,13 +42,13 @@ def compute_confusion_matrix(y_true, y_pred, categories):
     for true, pred in zip(y_true, y_pred):
         for category in categories:
             if true == category and pred == category:
-                cm[category]['TP'] += 1  # True Positive
+                cm[category]['TP'] += 1  
             elif true != category and pred == category:
-                cm[category]['FP'] += 1  # False Positive
+                cm[category]['FP'] += 1 
             elif true == category and pred != category:
-                cm[category]['FN'] += 1  # False Negative
+                cm[category]['FN'] += 1  
             elif true != category and pred != category:
-                cm[category]['TN'] += 1  # True Negative
+                cm[category]['TN'] += 1 
 
     return cm
 
@@ -74,7 +73,7 @@ class NaiveBayesClassifier:
     def fit(self, X, y):
         for i in range(len(X)):
             label = y.iloc[i]
-            # words = self._tokenize(X.iloc[i])
+            
             words = self.tokenizer.apply(X.iloc[i])
             self.vocab.update(words)
             if label not in self.class_word_counts:
@@ -87,7 +86,7 @@ class NaiveBayesClassifier:
                     self.class_word_counts[label][word] = 0
                 self.class_word_counts[label][word] += 1
 
-        # Calculate class priors
+        
         total_documents = len(y)
         self.class_priors = {
             label: count['__total__'] / total_documents for label, count in self.class_word_counts.items()}
@@ -108,7 +107,7 @@ class NaiveBayesClassifier:
             posteriors = self._calculate_posteriors(X.iloc[index])
             cat_prob = posteriors[category]
             total_sum = sum(posteriors.values())
-            if cat_prob/total_sum > umbral:  # Compara si el valor máximo es mayor a 'x'
+            if cat_prob/total_sum > umbral:  
                 if y.iloc[index] == category:
                     TP += 1
                 else:
@@ -124,7 +123,7 @@ class NaiveBayesClassifier:
         return text.lower().split()
 
     def _calculate_posteriors(self, text):
-        # words = self._tokenize(text)
+        
         words = self.tokenizer.apply(text)
         posteriors = {}
 
@@ -132,7 +131,7 @@ class NaiveBayesClassifier:
             prior = self.class_priors[label]
             likelihood = 1.0
 
-            # Laplace Correction
+            
             for word in words:
                 word_count = self.class_word_counts[label].get(word, 0)
                 total_words = self.class_word_counts[label]['__total__']
@@ -145,32 +144,24 @@ class NaiveBayesClassifier:
 
 
 def read_input(path='data/Noticias_argentinas'):
-    # Define the file paths
+    
     pkl_file = path + '.pkl'
     excel_file = path + '.xlsx'
 
-    # Check if the .pkl file exists
+    
     if os.path.exists(pkl_file):
-        # If .pkl file exists, load the DataFrame from it
+        
         df = pd.read_pickle(pkl_file)
         print("Loaded DataFrame from pickle file.")
     else:
-        # If .pkl file does not exist, read the Excel file and save it to .pkl
+        
         df = pd.read_excel(excel_file)
         df.to_pickle(pkl_file)
         print("Loaded DataFrame from Excel file and saved it to pickle.")
 
-    # Esto me parece que no sirve
-    # total_index = df[df['Internacional'] == "Total"].index
-    # if not total_index.empty:
-    #     stats = df.iloc[:total_index[0] + 1, 5:]
-    # else:
-    #     stats = df.iloc[:, 5:]
-    # print(stats)
-
+    
     df = df.iloc[:, :4]
-    # Display the DataFrame
-    # print(df)
+   
     return df
 
 
@@ -179,9 +170,7 @@ def no_category_filter(df):
            "categoria"] = "Noticias destacadas"
     with_cat = df[df["categoria"].notna()]
     df["categoria"] = df["categoria"].fillna("Sin categoría")
-    # with_cat = df[df["categoria"].notna() & (df["categoria"] != "Destacadas")]
-    # print(no_cat)
-    # print(with_cat)
+   
     return df, with_cat
 
 
@@ -189,32 +178,28 @@ def train_test_split(df, test_size=0.3, random_state=None, stratify_column='cate
     if random_state:
         np.random.seed(random_state)
 
-    # Inicializamos listas vacías para entrenamiento y prueba
+    
     train_set = pd.DataFrame(columns=df.columns)
     test_set = pd.DataFrame(columns=df.columns)
 
-    # Estratificar los datos según la columna
+    
     for category in df[stratify_column].unique():
         category_subset = df[df[stratify_column] == category]
         category_subset = category_subset.sample(
-            frac=1)  # Mezclar los datos de esa categoría
-
-        # Dividimos según el tamaño del conjunto de prueba
+            frac=1)  
         split_idx = int(len(category_subset) * (1 - test_size))
         train_subset = category_subset[:split_idx]
         test_subset = category_subset[split_idx:]
 
-        # Eliminar filas completamente vacías (all-NA) antes de concatenar
         train_subset = train_subset.dropna(how='all', axis=0)
         test_subset = test_subset.dropna(how='all', axis=0)
 
-        # Solo concatenar si los subconjuntos no están vacíos
         if not train_subset.empty:
             train_set = pd.concat([train_set, train_subset], ignore_index=True)
         if not test_subset.empty:
             test_set = pd.concat([test_set, test_subset], ignore_index=True)
 
-    # Mezclamos nuevamente ambos conjuntos
+    
     train_set = train_set.sample(frac=1).reset_index(drop=True)
     test_set = test_set.sample(frac=1).reset_index(drop=True)
 
@@ -232,7 +217,7 @@ def split_train_test(df):
 
 def extract_categories(df):
     categories = df['categoria'].unique()
-    # print(categories)
+    
     return categories
 
 
@@ -243,13 +228,13 @@ def split_x_y(df):
 
 
 def values_matrix(y_test, y_pred, categories):
-    # Confusion matrix
+    
     confusion_matrix = compute_confusion_matrix(y_test, y_pred, categories)
     print("Confusion Matrix:")
     for category, values in confusion_matrix.items():
         print(f"{category}: {values}")
 
-    # Calculate metrics
+    
     metrics = compute_metrics(confusion_matrix)
     print("Evaluation Metrics:")
     for category, values in metrics.items():
@@ -257,11 +242,11 @@ def values_matrix(y_test, y_pred, categories):
 
 
 def plot_confusion_matrix(title, true_positive, false_negative, false_positive, true_negative):
-    # Crear la matriz de confusión
+    
     confusion_matrix = np.array([[true_positive, false_negative],
                                  [false_positive, true_negative]])
 
-    # Crear el heatmap
+    
     plt.figure(figsize=(8, 6))
     sns.heatmap(confusion_matrix, annot=True, fmt='d', cmap='Blues',
                 xticklabels=['Predicted Positive', 'Predicted Negative'],
@@ -278,7 +263,7 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
     confusion_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
     category_to_index = {category: i for i, category in enumerate(categories)}
 
-    # Llenar la matriz de confusión
+    
     for true_label, pred_label in zip(y_test, y_pred):
         true_index = category_to_index[true_label]
         pred_index = category_to_index[pred_label]
@@ -293,10 +278,10 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
     sum_TN = 0
 
     for i, category in enumerate(categories):
-        TP = confusion_matrix[i, i]  # Verdaderos positivos
-        FP = sum(confusion_matrix[:, i]) - TP  # Falsos positivos
-        FN = sum(confusion_matrix[i, :]) - TP  # Falsos negativos
-        TN = np.sum(confusion_matrix) - (TP + FP + FN)  # Verdaderos negativos
+        TP = confusion_matrix[i, i]  
+        FP = sum(confusion_matrix[:, i]) - TP  
+        FN = sum(confusion_matrix[i, :]) - TP  
+        TN = np.sum(confusion_matrix) - (TP + FP + FN)  
 
         if TP + FP > 0:
             precision = TP / (TP + FP)
@@ -310,7 +295,6 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
             recall = 0
         recall_per_class.append(recall)
 
-        # F1 Score para la clase actual
         if precision + recall > 0:
             f1 = 2 * (precision * recall) / (precision + recall)
         else:
@@ -322,13 +306,13 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         sum_FN += FN
         sum_TN += TN
 
-    # Cálculo de macro-averages
+    
     macro_precision = np.mean(precision_per_class)
     macro_recall = np.mean(recall_per_class)
     macro_f1 = np.mean(f1_per_class)
 
-    # Accuracy (Exactitud) global
-    total_correct = np.trace(confusion_matrix)  # Suma de la diagonal principal
+    
+    total_correct = np.trace(confusion_matrix)  
     total_predictions = np.sum(confusion_matrix)
     accuracy = total_correct / total_predictions
 
@@ -374,57 +358,51 @@ def custom_filter(word):
 
 
 def show_matrix(y_test, y_pred, categories):
-    # Crear una matriz vacía con ceros para almacenar las frecuencias
+    
     matrix_size = len(categories)
     confusion_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
 
-    # Crear un mapeo entre las categorías y los índices de la matriz
     category_to_index = {category: i for i, category in enumerate(categories)}
 
-    # Llenar la matriz de confusión
     for true_label, pred_label in zip(y_test, y_pred):
         true_index = category_to_index[true_label]
         pred_index = category_to_index[pred_label]
         confusion_matrix[true_index, pred_index] += 1
 
-    # Convertir a porcentajes por fila (dividiendo cada fila por la suma de la fila)
     confusion_matrix_percentage = confusion_matrix.astype(
         float) / confusion_matrix.sum(axis=1)[:, np.newaxis] * 100
 
-    # Visualizar la matriz de confusión
+
     sns.heatmap(confusion_matrix_percentage, annot=True, fmt=".2f", cmap="Blues",
                 xticklabels=categories, yticklabels=categories, vmax=100)
 
     plt.xlabel('Predicted', fontsize=14)
     plt.ylabel('True', fontsize=14)
     plt.title('Confusion Matrix as Percentages', fontsize=16)
-    plt.xticks(rotation=45, ha='right')  # Rotar etiquetas de las columnas
-    # Asegurar que las etiquetas de las filas estén horizontales
+    plt.xticks(rotation=45, ha='right')  
     plt.yticks(rotation=0)
     plt.show()
 
-    # Paso 2: Crear una matriz vacía con ceros para almacenar las frecuencias
+    
     matrix_size = len(categories)
     confusion_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
 
-    # Paso 3: Crear un mapeo entre las categorías y los índices de la matriz
     category_to_index = {category: i for i, category in enumerate(categories)}
 
-    # Paso 4: Llenar la matriz de confusión
+
     for true_label, pred_label in zip(y_test, y_pred):
         true_index = category_to_index[true_label]
         pred_index = category_to_index[pred_label]
         confusion_matrix[true_index, pred_index] += 1
 
-    # Paso 5: Visualizar la matriz de confusión
+    
     sns.heatmap(confusion_matrix, annot=True, fmt="d", cmap="Blues",
                 xticklabels=categories, yticklabels=categories)
 
     plt.xlabel('Predicted', fontsize=14)
     plt.ylabel('True', fontsize=14)
     plt.title('Confusion Matrix', fontsize=16)
-    plt.xticks(rotation=45, ha='right')  # Rotar etiquetas de las columnas
-    # Asegurar que las etiquetas de las filas estén horizontales
+    plt.xticks(rotation=45, ha='right')  
     plt.yticks(rotation=0)
     plt.show()
 
@@ -453,7 +431,7 @@ def roc(x_test, y_test, categories, nb_classifier):
 
     plt.xlabel('Tasa de Falsos Positivos')
     plt.ylabel('Tasa de Verdaderos Positivos')
-    # plt.xscale('log')
+    
     plt.title('Tasa de FP vs Tasa de TP para diferentes umbrales')
     plt.legend(title='Categoría', loc='best')
     plt.grid(False)
@@ -476,9 +454,7 @@ def main():
 
     show_matrix(y_test, y_pred, categories)
     macroaverage_values_matrix(y_test, y_pred, categories)
-    # values_matrix(y_test, y_pred, categories)
-
-    # OJO, DEMORA MUCHO
+    
     print("Realizando la curva ROC, puede tardar un tiempo...")
     roc(x_test, y_test, categories, nb_classifier)
 
@@ -490,7 +466,7 @@ def main():
 
     category_counts = d_aux['categoria'].value_counts(normalize=True) * 100
     print(category_counts)
-    #print(d_aux)
+    
 
 
 
@@ -502,7 +478,7 @@ def no_filters():
     x_test, y_test = split_x_y(test_set)
     print(len(x_train))
     print(len(x_test))
-    # print(len(x_val))
+    
 
 
     tokenizer = Tokenizer(identity_filter, identity)
@@ -510,7 +486,6 @@ def no_filters():
     nb_classifier.fit(x_train, y_train)
 
     categories = extract_categories(train_set)
-    # y_pred = nb_classifier.predict(x_test)
 
     d_aux = df_no_cat[df_no_cat["categoria"] == "Sin categoría"]
     x_no_cat, _ = split_x_y(d_aux)
