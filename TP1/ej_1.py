@@ -3,9 +3,10 @@ import pandas as pd
 
 def calcular_probabilidades_condicionales(df, total_personas):
     probabilidades = {}
+    k = len(df.columns) - 1
     for columna in df.columns:
         if columna != "Nacionalidad":
-            prob_1 = df[columna].sum() / total_personas
+            prob_1 = (df[columna].sum() + 1) / (total_personas + k)
             probabilidades[columna] = prob_1
     return probabilidades
 
