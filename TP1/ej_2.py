@@ -527,8 +527,6 @@ def main():
     train_set, test_set = split_train_test(df_categories)
     x_train, y_train = split_x_y(train_set)
     x_test, y_test = split_x_y(test_set)
-    print(len(x_train))
-    print(len(x_test))
     # print(len(x_val))
 
     tokenizer = Tokenizer(complex_filter, complex_sanitize)
@@ -544,7 +542,22 @@ def main():
     # values_matrix(y_test, y_pred, categories)
 
     # OJO, DEMORA MUCHO
+    print("Realizando la curva ROC, puede tardar un tiempo...")
     roc(x_test, y_test, categories, nb_classifier)
+
+    d_aux = df_no_cat[df_no_cat["categoria"] == "Sin categoría"]
+    x_no_cat, _ = split_x_y(d_aux)
+
+    y_pred = nb_classifier.predict(x_no_cat)
+    d_aux["categoria"] = y_pred
+
+        # Calcular el porcentaje de participación de cada categoría
+    category_counts = d_aux['categoria'].value_counts(normalize=True) * 100
+
+    # Mostrar el resultado
+    print(category_counts)
+    #print(d_aux)
+
 
 
 def no_filters():
@@ -574,4 +587,4 @@ def no_filters():
 
 
 if __name__ == '__main__':
-    no_filters()
+    main()

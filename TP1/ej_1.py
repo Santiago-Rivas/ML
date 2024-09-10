@@ -44,9 +44,9 @@ def main():
     total_ingleses = len(ingleses)
     total_escoceses = len(escoceses)
     total_personas = total_ingleses + total_escoceses
-    print("Total ingleses", total_ingleses)
-    print("Total escoceses", total_escoceses)
-    print("Total personas", total_personas)
+    #print("Total ingleses", total_ingleses)
+    #print("Total escoceses", total_escoceses)
+    #print("Total personas", total_personas)
 
     prior_ingleses = total_ingleses / total_personas
     prior_escoces = total_escoceses / total_personas
