@@ -65,74 +65,18 @@ def get_admit_distribution(rank_column, gre_column, gpa_column, admit_column):
     totals_distribution = np.zeros((4, 4))
     
     for i in range(len(rank_column)):
-        if gre_column[i] >= 500 and gpa_column[i] >= 3:
-            if rank_column[i] == 1:
-                if admit_column[i] == 1:
-                    admit_distribution[0][0] += 1
-                totals_distribution[0][0] += 1
-            elif rank_column[i] == 2:
-                if admit_column[i] == 1:
-                    admit_distribution[1][0] += 1
-                totals_distribution[1][0] += 1
-            elif rank_column[i] == 3:
-                if admit_column[i] == 1:
-                    admit_distribution[2][0] += 1
-                totals_distribution[2][0] += 1
-            elif rank_column[i] == 4:
-                if admit_column[i] == 1:
-                    admit_distribution[3][0] += 1
-                totals_distribution[3][0] += 1
+        rank = rank_column[i]
+        if gre_column[i] >= 500 and gpa_column[i] >= 3: 
+            col = 0
         elif gre_column[i] < 500 and gpa_column[i] >= 3:
-            if rank_column[i] == 1:
-                if admit_column[i] == 1:
-                    admit_distribution[0][1] += 1
-                totals_distribution[0][1] += 1
-            elif rank_column[i] == 2:
-                if admit_column[i] == 1:
-                    admit_distribution[1][1] += 1
-                totals_distribution[1][1] += 1
-            elif rank_column[i] == 3:
-                if admit_column[i] == 1:
-                    admit_distribution[2][1] += 1
-                totals_distribution[2][1] += 1
-            elif rank_column[i] == 4:
-                if admit_column[i] == 1:
-                    admit_distribution[3][1] += 1
-                totals_distribution[3][1] += 1
+            col = 1
         elif gre_column[i] >= 500 and gpa_column[i] < 3:
-            if rank_column[i] == 1:
-                if admit_column[i] == 1:
-                    admit_distribution[0][2] += 1
-                totals_distribution[0][2] += 1
-            elif rank_column[i] == 2:
-                if admit_column[i] == 1:
-                    admit_distribution[1][2] += 1
-                totals_distribution[1][2] += 1
-            elif rank_column[i] == 3:
-                if admit_column[i] == 1:
-                    admit_distribution[2][2] += 1
-                totals_distribution[2][2] += 1
-            elif rank_column[i] == 4:
-                if admit_column[i] == 1:
-                    admit_distribution[3][2] += 1
-                totals_distribution[3][2] += 1
+            col = 2
         elif gre_column[i] < 500 and gpa_column[i] < 3:
-            if rank_column[i] == 1:
-                if admit_column[i] == 1:
-                    admit_distribution[0][3] += 1
-                totals_distribution[0][3] += 1
-            elif rank_column[i] == 2:
-                if admit_column[i] == 1:
-                    admit_distribution[1][3] += 1
-                totals_distribution[1][3] += 1
-            elif rank_column[i] == 3:
-                if admit_column[i] == 1:
-                    admit_distribution[2][3] += 1
-                totals_distribution[2][3] += 1
-            elif rank_column[i] == 4:
-                if admit_column[i] == 1:
-                    admit_distribution[3][3] += 1
-                totals_distribution[3][3] += 1
+            col = 3
+        if admit_column[i] == 1:
+                admit_distribution[rank-1][col] += 1
+        totals_distribution[rank-1][col] += 1
 
     return admit_distribution /totals_distribution
     
