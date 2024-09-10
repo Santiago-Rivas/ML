@@ -557,17 +557,21 @@ def no_filters():
     print(len(x_test))
     # print(len(x_val))
 
-    tokenizer = Tokenizer(custom_filter, custom_sanitizer)
+
+    tokenizer = Tokenizer(identity_filter, identity)
     nb_classifier = NaiveBayesClassifier(tokenizer)
     nb_classifier.fit(x_train, y_train)
 
     categories = extract_categories(train_set)
-    y_pred = nb_classifier.predict(x_test)
+    # y_pred = nb_classifier.predict(x_test)
 
-    show_matrix(y_test, y_pred, categories)
-    macroaverage_values_matrix(y_test, y_pred, categories)
-    roc(x_test, y_test, categories, nb_classifier)
+    d_aux = df_no_cat[df_no_cat["categoria"] == "Sin categoría"]
+    x_no_cat, _ = split_x_y(d_aux)
+
+    y_pred = nb_classifier.predict(x_no_cat)
+    d_aux["categoria"] = y_pred
+    print(d_aux)
 
 
 if __name__ == '__main__':
-    main()
+    no_filters()
