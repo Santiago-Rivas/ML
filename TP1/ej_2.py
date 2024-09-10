@@ -106,7 +106,6 @@ class NaiveBayesClassifier:
         TN = 0
         for index in range(len(X)):
             posteriors = self._calculate_posteriors(X.iloc[index])
-            # Obtiene el valor máximo asociado a esa clave
             cat_prob = posteriors[category]
             total_sum = sum(posteriors.values())
             if cat_prob/total_sum > umbral:  # Compara si el valor máximo es mayor a 'x'
@@ -228,38 +227,6 @@ def split_train_test(df):
     train_set, test_set = train_test_split(
         df, test_size=0.2, random_state=RANDOM_STATE, stratify_column='categoria')
 
-    # train_set, temp_set = train_test_split(
-    #     df, test_size=0.2, random_state=RANDOM_STATE, stratify_column='categoria')
-
-    # test_set, val_set = train_test_split(
-    #     temp_set, test_size=0.3, random_state=RANDOM_STATE, stratify_column='categoria')
-
-    # train_len = len(train_set)
-    # test_len = len(test_set)
-
-    # print("Training set size:", train_len)
-    # print("Testing set size:", test_len)
-    # print("Validation set size:", val_len)
-    #
-    # print("\nTraining set:")
-    # print(train_set.head())
-    #
-    # print("\nTesting set:")
-    # print(test_set.head())
-    #
-    # print("\nValidation set:")
-    # print(val_set.head())
-    #
-    # # Count occurrences of each category in each set
-    # print("\nCategory distribution in the Training set:")
-    # print(train_set['categoria'].value_counts() / train_len)
-    #
-    # print("\nCategory distribution in the Testing set:")
-    # print(test_set['categoria'].value_counts() / test_len)
-    #
-    # print("\nCategory distribution in the Validation set:")
-    # print(val_set['categoria'].value_counts() / val_len)
-
     return train_set, test_set
 
 
@@ -307,47 +274,38 @@ def plot_confusion_matrix(title, true_positive, false_negative, false_positive, 
 
 
 def macroaverage_values_matrix(y_test, y_pred, categories):
-    # Crear una matriz vacía con ceros para almacenar las frecuencias
     matrix_size = len(categories)
     confusion_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
-
-    # Crear un mapeo entre las categorías y los índices de la matriz
     category_to_index = {category: i for i, category in enumerate(categories)}
+
     # Llenar la matriz de confusión
     for true_label, pred_label in zip(y_test, y_pred):
         true_index = category_to_index[true_label]
         pred_index = category_to_index[pred_label]
         confusion_matrix[true_index, pred_index] += 1
-    # Inicializamos listas para almacenar métricas por clase
+
     precision_per_class = []
     recall_per_class = []
     f1_per_class = []
-
     sum_TP = 0
     sum_FP = 0
     sum_FN = 0
     sum_TN = 0
-    # Calcular las métricas por clase
+
     for i, category in enumerate(categories):
         TP = confusion_matrix[i, i]  # Verdaderos positivos
         FP = sum(confusion_matrix[:, i]) - TP  # Falsos positivos
         FN = sum(confusion_matrix[i, :]) - TP  # Falsos negativos
         TN = np.sum(confusion_matrix) - (TP + FP + FN)  # Verdaderos negativos
 
-        # plot_confusion_matrix(category, TP, FN, FP, TN)
-
-        # Precisión para la clase actual
         if TP + FP > 0:
             precision = TP / (TP + FP)
-            # print(category + " Precision: " + str(precision))
         else:
             precision = 0
         precision_per_class.append(precision)
 
-        # Recall (Sensibilidad) para la clase actual
         if TP + FN > 0:
             recall = TP / (TP + FN)
-            # print(category + " recall: " + str(recall))
         else:
             recall = 0
         recall_per_class.append(recall)
@@ -355,7 +313,6 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         # F1 Score para la clase actual
         if precision + recall > 0:
             f1 = 2 * (precision * recall) / (precision + recall)
-            # print(category + " f1: " + str(f1))
         else:
             f1 = 0
         f1_per_class.append(f1)
@@ -364,8 +321,6 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
         sum_FP += FP
         sum_FN += FN
         sum_TN += TN
-
-    # plot_confusion_matrix("Total", sum_TP, sum_FN, sum_FP, sum_TN)
 
     # Cálculo de macro-averages
     macro_precision = np.mean(precision_per_class)
@@ -377,7 +332,6 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
     total_predictions = np.sum(confusion_matrix)
     accuracy = total_correct / total_predictions
 
-    # Mostrar resultados
     print(f"Precisión (Macro Average): {macro_precision:.2f}")
     print(f"Exactitud (Accuracy): {accuracy:.2f}")
     print(f"F1 Score (Macro Average): {macro_f1:.2f}")
@@ -386,45 +340,34 @@ def macroaverage_values_matrix(y_test, y_pred, categories):
 def remove_short_words(word, n=3):
     return len(word) > n
 
-
 def remove_non_alpha(word):
     return word.isalpha()
-
 
 def complex_filter(word):
     return remove_short_words(word) and remove_non_alpha(word)
 
-
 def to_lower(word):
     return word.lower()
-
 
 def remove_punctuation(word):
     return word.translate(str.maketrans('', '', string.punctuation))
 
-
 stemmer = snowballstemmer.stemmer('spanish')
-
 
 def stemming_es(palabra):
     return stemmer.stemWord(palabra)
 
-
 def complex_sanitize(word):
     return to_lower(remove_punctuation(word))
-
 
 def identity(word):
     return word
 
-
 def identity_filter(word):
     return True
 
-
 def custom_sanitizer(word):
     return stemming_es(to_lower(remove_punctuation(word)))
-
 
 def custom_filter(word):
     return True
@@ -489,17 +432,13 @@ def show_matrix(y_test, y_pred, categories):
 def roc(x_test, y_test, categories, nb_classifier):
     thresholds = np.linspace(0.0, 1.0, 11)
 
-    # Crear el gráfico FP vs TP en porcentajes
     plt.figure(figsize=(8, 6))
-
     plt.plot([0, 1], [0, 1], linestyle='--', color='gray', label='clasificación aleatoria')
 
     for category in categories:
-        # Listas para guardar los porcentajes de TP y FP
         TP_percentages = []
         FP_percentages = []
 
-        # Probar el clasificador para cada umbral
         for threshold in thresholds:
             TP, FP, FN, TN = nb_classifier.classify(
                 x_test, y_test, threshold, category)
@@ -527,7 +466,6 @@ def main():
     train_set, test_set = split_train_test(df_categories)
     x_train, y_train = split_x_y(train_set)
     x_test, y_test = split_x_y(test_set)
-    # print(len(x_val))
 
     tokenizer = Tokenizer(complex_filter, complex_sanitize)
     nb_classifier = NaiveBayesClassifier(tokenizer)
@@ -538,7 +476,6 @@ def main():
 
     show_matrix(y_test, y_pred, categories)
     macroaverage_values_matrix(y_test, y_pred, categories)
-
     # values_matrix(y_test, y_pred, categories)
 
     # OJO, DEMORA MUCHO
@@ -551,10 +488,7 @@ def main():
     y_pred = nb_classifier.predict(x_no_cat)
     d_aux["categoria"] = y_pred
 
-        # Calcular el porcentaje de participación de cada categoría
     category_counts = d_aux['categoria'].value_counts(normalize=True) * 100
-
-    # Mostrar el resultado
     print(category_counts)
     #print(d_aux)
 
