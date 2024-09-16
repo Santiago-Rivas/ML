@@ -25,6 +25,9 @@ def clasificar(vector, prob_cond_ingleses, prob_cond_escoceses, prior_ingleses, 
             prob_ingleses *= (1 - prob_cond_ingleses[columna])
             prob_escoces *= (1 - prob_cond_escoceses[columna])
 
+    prob_total = prob_ingleses + prob_escoces
+    print(prob_escoces / prob_total)
+    print(prob_ingleses / prob_total)
     # Determinar la clase con mayor probabilidad
     if prob_ingleses > prob_escoces:
         return "Inglés"
@@ -44,9 +47,9 @@ def main():
     total_ingleses = len(ingleses)
     total_escoceses = len(escoceses)
     total_personas = total_ingleses + total_escoceses
-    #print("Total ingleses", total_ingleses)
-    #print("Total escoceses", total_escoceses)
-    #print("Total personas", total_personas)
+    # print("Total ingleses", total_ingleses)
+    # print("Total escoceses", total_escoceses)
+    # print("Total personas", total_personas)
 
     prior_ingleses = total_ingleses / total_personas
     prior_escoces = total_escoceses / total_personas
