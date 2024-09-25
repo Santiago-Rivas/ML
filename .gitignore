@@ -3,3 +3,6 @@ img
 *.swp
 
 *.~lock*
+
+TP2/RandomForest/*.png
+TP2/RandomForest/*.gif
