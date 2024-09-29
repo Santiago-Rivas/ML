@@ -454,13 +454,14 @@ def main():
     macroaverage_values_matrix(y_test, y_pred, categories)
 
     print("Realizando la curva ROC, puede tardar un tiempo...")
-    roc(x_test, y_test, categories, nb_classifier)
+    # roc(x_test, y_test, categories, nb_classifier)
 
     d_aux = df_no_cat[df_no_cat["categoria"] == "Sin categoría"]
     x_no_cat, _ = split_x_y(d_aux)
 
     y_pred = nb_classifier.predict(x_no_cat)
     d_aux["categoria"] = y_pred
+    print(d_aux.to_string())
 
     category_counts = d_aux['categoria'].value_counts(normalize=True) * 100
     print(category_counts)
