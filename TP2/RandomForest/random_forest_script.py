@@ -556,11 +556,12 @@ max_attr = len(attributes)
 
 
 # Parameter ranges
-n_estimators_values = [5, 10, 5]  # Example values, adjust as needed
-interval_features_values = [2, 4, 6]  # Example values, adjust as needed
-min_features_values = [1]        # Example values, adjust as needed
+n_estimators_values = [5, 10]  # Example values, adjust as needed
+interval_features_values = [2, 4]  # Example values, adjust as needed
+min_features_values = [1, 2]        # Example values, adjust as needed
 bootstrap_values = [True]    # Iterate over True and False
-random_states = [10, 20, 30]    # Iterate over True and False
+random_states = [10]    # Iterate over True and Fals
+iterations = 10
 
 unix_time = int(time.time())
 
@@ -569,47 +570,95 @@ for n_estimators in n_estimators_values:
         for min_features in min_features_values:
             for bootstrap in bootstrap_values:
                 for random_state in random_states:
-                    # Mezclar el conjunto de datos
+                    train_accuracies = []
+                    test_accuracies = []
+
+                    # Shuffle the dataset
                     data = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
 
-                    # Dividir en conjunto de entrenamiento y prueba (80% entrenamiento, 20% prueba)
+                    # Split into training and testing sets (80% training, 20% testing)
                     train_size = int(0.8 * len(data))
                     train_data = data.iloc[:train_size]
                     test_data = data.iloc[train_size:]
 
-                    print(f"RANDOM FOREST: rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}")
-                    # Train RandomForest model with varying parameters
-                    rf = RandomForest(
-                        n_estimators=n_estimators,
-                        interval_features=interval_features,
-                        min_features=min_features,
-                        max_features=max_attr,
-                        bootstrap=bootstrap
-                    )
-                    rf.fit(train_data, target_attribute, train_data, test_data)
+                    for iteration in range(iterations):
+                        print(f"Iteration {iteration + 1}: RANDOM FOREST: rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}")
 
-                    # Collect accuracies
-                    train_accuracy = rf.train_accuracy
-                    test_accuracy = rf.test_accuracy
-                    node_counts = range(1, len(train_accuracy) + 1)
+                        # Train RandomForest model with varying parameters
+                        rf = RandomForest(
+                            n_estimators=n_estimators,
+                            interval_features=interval_features,
+                            min_features=min_features,
+                            max_features=max_attr,
+                            bootstrap=bootstrap
+                        )
+                        rf.fit(train_data, target_attribute, train_data, test_data)
 
-                    # Save precision vs. number of nodes plot
+                        # Collect accuracies
+                        train_accuracy = rf.train_accuracy
+                        test_accuracy = rf.test_accuracy
+
+                        # Check the shapes before appending
+                        print(f"Train accuracy shape: {np.shape(train_accuracy)}")
+                        print(f"Test accuracy shape: {np.shape(test_accuracy)}")
+                        # print(train_accuracy)
+                        # print(test_accuracy)
+
+                        train_accuracies.append(train_accuracy)
+                        test_accuracies.append(test_accuracy)
+
+                    min_len = len(train_accuracies[0])
+                    for ta in train_accuracies:
+                        print(np.shape(ta))
+                        ta_len = len(ta)
+                        if min_len > ta_len:
+                            min_len = ta_len
+
+                    train_accuracies_cut = []
+                    test_accuracies_cut = []
+
+                    print(min_len)
+                    for tr, ts in zip(train_accuracies, test_accuracies):
+                        train_accuracies_cut.append(tr[:min_len])
+                        test_accuracies_cut.append(ts[:min_len])
+
+                    # Convert accuracies to numpy arrays for easier manipulation
+                    train_accuracies = np.array(train_accuracies_cut)
+                    test_accuracies = np.array(test_accuracies_cut)
+
+                    # Check shapes of accumulated accuracies
+                    print(f"Accumulated Train Accuracies Shape: {train_accuracies.shape}")
+                    print(f"Accumulated Test Accuracies Shape: {test_accuracies.shape}")
+
+                    # Calculate average and standard deviation
+                    avg_train_accuracy = np.mean(train_accuracies, axis=0)
+                    avg_test_accuracy = np.mean(test_accuracies, axis=0)
+                    std_train_accuracy = np.std(train_accuracies, axis=0)
+                    std_test_accuracy = np.std(test_accuracies, axis=0)
+
+                    node_counts = range(1, len(avg_train_accuracy) + 1)
+
+                    # Save precision vs. number of nodes plot with error bars
                     plt.figure(figsize=(10, 6))
-                    plt.plot(node_counts, train_accuracy, label='Precisión en Entrenamiento')
-                    plt.plot(node_counts, test_accuracy, label='Precisión en Prueba')
-                    plt.xlabel('Número de Nodos')
-                    plt.ylabel('Precisión')
+                    plt.plot(node_counts, avg_train_accuracy, label='Average Train Accuracy', marker='o')
+                    plt.fill_between(node_counts, avg_train_accuracy - std_train_accuracy, avg_train_accuracy + std_train_accuracy, alpha=0.2)
+                    plt.plot(node_counts, avg_test_accuracy, label='Average Test Accuracy', marker='o')
+                    plt.fill_between(node_counts, avg_test_accuracy - std_test_accuracy, avg_test_accuracy + std_test_accuracy, alpha=0.2)
+                    plt.xlabel('Number of Nodes')
+                    plt.ylabel('Accuracy')
                     plt.legend()
-                    plt.savefig(f"output/{unix_time}_precision_vs_nodos_rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}.png")
+                    plt.title('Accuracy vs. Number of Nodes with Error Bars')
+                    plt.savefig(f"output/{unix_time}_iterations_{iterations}-avg_precision_vs_nodos_rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}.png")
                     plt.close()
 
-                    train_acc, y_true, y_pred = rf.evaluate(train_data)
-                    print(f"Final train accuracy: {train_acc:.4f} (n_estimators={n_estimators}, interval_features={interval_features}, min_features={min_features}, bootstrap={bootstrap})")
-                    # Evaluate model on the test set
-                    test_acc, y_true, y_pred = rf.evaluate(test_data)
-                    print(f"Final test accuracy: {test_acc:.4f} (n_estimators={n_estimators}, interval_features={interval_features}, min_features={min_features}, bootstrap={bootstrap})")
+                    # Evaluate model on the last test set of the last iteration
+                    final_train_acc, y_true, y_pred = rf.evaluate(train_data)
+                    final_test_acc, y_true, y_pred = rf.evaluate(test_data)
 
-                    # Generate and save confusion matrix plot
+                    print(f"Final average train accuracy: {avg_train_accuracy[-1]:.4f} ± {std_train_accuracy[-1]:.4f} (n_estimators={n_estimators}, interval_features={interval_features}, min_features={min_features}, bootstrap={bootstrap})")
+                    print(f"Final average test accuracy: {avg_test_accuracy[-1]:.4f} ± {std_test_accuracy[-1]:.4f} (n_estimators={n_estimators}, interval_features={interval_features}, min_features={min_features}, bootstrap={bootstrap})")
+
+                    # Generate and save confusion matrix plot for the last iteration
                     cm = confusion_matrix(y_true, y_pred)
                     plt.figure(figsize=(6, 4))
                     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
@@ -620,7 +669,6 @@ for n_estimators in n_estimators_values:
                     plt.xlabel('Predicted Value')
                     plt.ylabel('True Value')
                     plt.tight_layout()
-                    # Save confusion matrix with parameters in filename
                     plt.savefig(f"output/{unix_time}_confusion_matrix_rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}.png")
                     plt.close()
 
