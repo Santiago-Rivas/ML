@@ -555,13 +555,21 @@ max_attr = len(attributes)
 # plt.show()
 
 
+max_attr = len(attributes)
 # Parameter ranges
-n_estimators_values = [5, 10]  # Example values, adjust as needed
-interval_features_values = [2, 4]  # Example values, adjust as needed
-min_features_values = [1, 2]        # Example values, adjust as needed
-bootstrap_values = [True]    # Iterate over True and False
-random_states = [10]    # Iterate over True and Fals
-iterations = 10
+n_estimators_values = [10]                  # Example values, adjust as needed
+interval_features_values = [6]        # Example values, adjust as needed
+min_features_values = range(4, 15, 3)          # Example values, adjust as needed
+# min_features_values = [4, 6]
+bootstrap_values = [True]                   # Iterate over True and False
+random_states = [10]                        # Iterate over True and Fals
+iterations = 3
+
+train_averages = []
+train_std_devs = []
+
+test_averages = []
+test_std_devs = []
 
 unix_time = int(time.time())
 
@@ -581,10 +589,12 @@ for n_estimators in n_estimators_values:
                     train_data = data.iloc[:train_size]
                     test_data = data.iloc[train_size:]
 
-                    for iteration in range(iterations):
-                        print(f"Iteration {iteration + 1}: RANDOM FOREST: rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}")
+                    final_train_accuracies = []
+                    final_test_accuracies = []
 
-                        # Train RandomForest model with varying parameters
+                    for iteration in range(iterations):
+
+                        print(f"Iteration {iteration + 1}: RANDOM FOREST: rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}")
                         rf = RandomForest(
                             n_estimators=n_estimators,
                             interval_features=interval_features,
@@ -594,22 +604,21 @@ for n_estimators in n_estimators_values:
                         )
                         rf.fit(train_data, target_attribute, train_data, test_data)
 
-                        # Collect accuracies
                         train_accuracy = rf.train_accuracy
                         test_accuracy = rf.test_accuracy
-
-                        # Check the shapes before appending
-                        print(f"Train accuracy shape: {np.shape(train_accuracy)}")
-                        print(f"Test accuracy shape: {np.shape(test_accuracy)}")
-                        # print(train_accuracy)
-                        # print(test_accuracy)
 
                         train_accuracies.append(train_accuracy)
                         test_accuracies.append(test_accuracy)
 
+                        final_train_acc, y_true, y_pred = rf.evaluate(train_data)
+                        final_test_acc, y_true, y_pred = rf.evaluate(test_data)
+
+                        final_train_accuracies.append(final_train_acc)
+                        final_test_accuracies.append(final_test_acc)
+
+
                     min_len = len(train_accuracies[0])
                     for ta in train_accuracies:
-                        print(np.shape(ta))
                         ta_len = len(ta)
                         if min_len > ta_len:
                             min_len = ta_len
@@ -617,20 +626,13 @@ for n_estimators in n_estimators_values:
                     train_accuracies_cut = []
                     test_accuracies_cut = []
 
-                    print(min_len)
                     for tr, ts in zip(train_accuracies, test_accuracies):
                         train_accuracies_cut.append(tr[:min_len])
                         test_accuracies_cut.append(ts[:min_len])
 
-                    # Convert accuracies to numpy arrays for easier manipulation
                     train_accuracies = np.array(train_accuracies_cut)
                     test_accuracies = np.array(test_accuracies_cut)
 
-                    # Check shapes of accumulated accuracies
-                    print(f"Accumulated Train Accuracies Shape: {train_accuracies.shape}")
-                    print(f"Accumulated Test Accuracies Shape: {test_accuracies.shape}")
-
-                    # Calculate average and standard deviation
                     avg_train_accuracy = np.mean(train_accuracies, axis=0)
                     avg_test_accuracy = np.mean(test_accuracies, axis=0)
                     std_train_accuracy = np.std(train_accuracies, axis=0)
@@ -655,8 +657,10 @@ for n_estimators in n_estimators_values:
                     final_train_acc, y_true, y_pred = rf.evaluate(train_data)
                     final_test_acc, y_true, y_pred = rf.evaluate(test_data)
 
+                    print(f"Iteration {iteration + 1}: RANDOM FOREST: rand_state-{random_state}_n_est_{n_estimators}_int_feat_{interval_features}_min_feat_{min_features}_boot_{bootstrap}")
                     print(f"Final average train accuracy: {avg_train_accuracy[-1]:.4f} ± {std_train_accuracy[-1]:.4f} (n_estimators={n_estimators}, interval_features={interval_features}, min_features={min_features}, bootstrap={bootstrap})")
                     print(f"Final average test accuracy: {avg_test_accuracy[-1]:.4f} ± {std_test_accuracy[-1]:.4f} (n_estimators={n_estimators}, interval_features={interval_features}, min_features={min_features}, bootstrap={bootstrap})")
+                    # train_averages.append(avg_train_accuracy[-1])
 
                     # Generate and save confusion matrix plot for the last iteration
                     cm = confusion_matrix(y_true, y_pred)
@@ -674,3 +678,41 @@ for n_estimators in n_estimators_values:
 
                     print("Confusion Matrix:")
                     print(cm)
+
+                train_averages.append(np.mean(final_train_accuracies))
+                train_std_devs.append(np.std(final_train_accuracies))
+                test_averages.append(np.mean(final_test_accuracies))
+                test_std_devs.append(np.std(final_test_accuracies))
+
+print(train_averages)
+print(train_std_devs)
+print(test_averages)
+print(test_std_devs)
+
+plt.figure(figsize=(10, 6))
+
+# Plot for unweighted K-NN
+plt.errorbar(
+    min_features_values,
+    train_averages,
+    yerr=train_std_devs,
+    label='Train Averages',
+    marker='o',
+    capsize=5
+)
+
+# Plot for unweighted K-NN
+plt.errorbar(
+    min_features_values,
+    test_averages,
+    yerr=test_std_devs,
+    label='Test Averages',
+    marker='o',
+    capsize=5
+)
+
+plt.legend()
+plt.grid(True)
+
+# Save the plot
+plt.savefig("output/avg_acc_vs_min_features.png")
