@@ -10,6 +10,39 @@ import multiprocessing
 
 lock = None
 
+class linear_svc:
+    def __init__(self, kernel, c, cache_size):
+        self.kernel = kernel
+        self.c = c
+        self.cache_size = cache_size
+    
+    def dir_name_string(self, unix_time):
+        return f"{unix_time}_kernel_{self.kernel}_C_{self.C:0.2f}_cache_{self.cache_size}"
+    
+    def train(self, x_train, y_train):
+        self.svm_clf = SVC(kernel=self.kernel, C=self.C, cache_size=self.cache_size)
+        self.svm_clf.fit(x_train, y_train)
+
+    def predict(self, x_test):
+        return self.svm_clf.predict(x_test)
+
+class rbf_svc:
+    def __init__(self, kernel, c, gamma, cache_size):
+        self.kernel = kernel
+        self.c = c
+        self.gamma = gamma
+        self.cache_size = cache_size
+    
+    def dir_name_string(self, unix_time):
+        return f"{unix_time}_kernel_{self.kernel}_C_{self.C:0.2f}_cache_{self.cache_size}_gamma_{self.gamma}"
+    
+    def train(self, x_train, y_train):
+        self.svm_clf = SVC(kernel=self.kernel, C=self.c, gamma=self.gamma ,cache_size=self.cache_size)
+        self.svm_clf.fit(x_train, y_train)
+
+    def predict(self, x_test):
+        return self.svm_clf.predict(x_test)
+    
 
 def split_data_into_equal_sets(X, y, n_splits):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
@@ -144,13 +177,19 @@ def run_svm(kernel, C, gamma, train_sets, test_sets, classes, class_colors,
         x_train, y_train = train_set[0], train_set[1]
         x_test, y_test = test_set[0], test_set[1]
 
-        if gamma != 0:
-            svm_clf = SVC(kernel=kernel, C=C, gamma=gamma, cache_size=500)
+        if kernel == 'rbf':
+            svm_clf = rbf_svc(kernel, C, 'scale', cache_size=500)
+            svm_clf.train(x_train, y_train)
+            y_pred = svm_clf.predict(x_test)
+            print("Estoy ACA")
         else:
-            svm_clf = SVC(kernel=kernel, C=C, cache_size=500)
+            if gamma != 0:
+                svm_clf = SVC(kernel=kernel, C=C, gamma=gamma, cache_size=500)
+            else:
+                svm_clf = SVC(kernel=kernel, C=C, cache_size=500)
 
-        svm_clf.fit(x_train, y_train)
-        y_pred = svm_clf.predict(x_test)
+            svm_clf.fit(x_train, y_train)
+            y_pred = svm_clf.predict(x_test)
 
         metrics = calculate_metrics(y_test, y_pred)
 
@@ -193,47 +232,51 @@ if __name__ == '__main__':
         print("Usage: python script.py <image_dir> <large_image_path> <img_out_dir>")
         sys.exit(1)
 
+
+    # ARGUMENTOS
     image_dir = sys.argv[1]
     large_image_path = sys.argv[2]
     img_out_dir = sys.argv[3]
 
+
+    # CONSTANTES 
     classes = {'vaca': 0, 'cielo': 1, 'pasto': 2}
     class_colors = {
         0: [255, 0, 0],     # Red
         1: [0, 0, 255],     # Blue
         2: [0, 255, 0]      # Green
     }
-
     reduction_percent = 100
+    n_splits = 2
+
+
     X, y = load_pixels_as_data(image_dir, classes, reduction_percent)
 
-    n_splits = 5
     train_sets, test_sets = split_data_into_equal_sets(X, y, n_splits)
+
 
     # Different kernels and C values to experiment with
     # kernels = ['sigmoid']
-    kernels = ['poly', 'rbf']
-    C_values = [10]
+    kernels = ['rbf']
+    C_values = [500]
     # kernels = ['linear', 'poly', 'rbf']
     # C_values = [i * 0.1 for i in range(1, 11)]
     gamma_values = [0]
     print(C_values)
 
+
+    # ARCHIVO DE SALIDA DE RESULTADOS
     metrics_output_file = os.path.join(img_out_dir, "metrics.csv")
-    output_str = "kernel;c_value;gamma;iteration;class;precision;recall;f1;accuracy\n"
-
-    # Check if the file exists
     if not os.path.exists(metrics_output_file):
-        # If it doesn't exist, write the header to the file
         with open(metrics_output_file, 'w') as f:
-            f.write(output_str)
+            f.write("kernel;c_value;gamma;iteration;class;precision;recall;f1;accuracy\n")
+    lock = multiprocessing.Lock()
 
-    lock = multiprocessing.Lock()  # Create a multiprocessing lock
 
-    # Create a list of arguments for each SVM run
-    jobs = [(kernel, C, gamma, train_sets, test_sets, classes, class_colors,
-             large_image_path, img_out_dir, metrics_output_file) for kernel in kernels for C in C_values for gamma in gamma_values]
+    # LISTA DE ARGUMENTOS PARA EL THREAD
+    jobs = [(kernel, C, gamma, 
+            train_sets, test_sets, classes, class_colors, large_image_path, img_out_dir, metrics_output_file) 
+            for kernel in kernels for C in C_values for gamma in gamma_values]
 
-    # Use multiprocessing to parallelize the SVM training and evaluation
     with multiprocessing.Pool(processes=3) as pool:
         pool.starmap(run_svm, jobs)
