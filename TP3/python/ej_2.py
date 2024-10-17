@@ -21,7 +21,8 @@ def split_data_into_equal_sets(X, y, n_splits):
         y_train, y_test = y[train_index], y[test_index]
         train_sets.append((X_train, y_train))
         test_sets.append((X_test, y_test))
-
+        print("train: ", len(train_index))
+        print("test: ", len(test_index))
     return train_sets, test_sets
 
 
@@ -93,6 +94,7 @@ def load_pixels_as_data(image_dir, classes, reduction_percent=100):
 
             img_data = np.array(img)
             pixels = img_data.reshape(-1, 3)
+            print(pixels)
 
             # Calculate number of pixels to keep
             num_pixels = pixels.shape[0]
@@ -195,10 +197,6 @@ if __name__ == '__main__':
     large_image_path = sys.argv[2]
     img_out_dir = sys.argv[3]
 
-    # image_dir = 'images/train'
-    # large_image_path = 'images/cow.jpg'
-    # img_out_dir = "images/out/"
-
     classes = {'vaca': 0, 'cielo': 1, 'pasto': 2}
     class_colors = {
         0: [255, 0, 0],     # Red
@@ -206,17 +204,16 @@ if __name__ == '__main__':
         2: [0, 255, 0]      # Green
     }
 
-    # Reduce dataset if it is too big
-    reduction_percent = 5
+    reduction_percent = 100
     X, y = load_pixels_as_data(image_dir, classes, reduction_percent)
 
-    n_splits = 10
+    n_splits = 5
     train_sets, test_sets = split_data_into_equal_sets(X, y, n_splits)
 
     # Different kernels and C values to experiment with
     # kernels = ['sigmoid']
-    kernels = ['linear', 'poly', 'rbf']
-    C_values = [i * 0.1 for i in range(12, 14)]
+    kernels = ['poly', 'rbf']
+    C_values = [10]
     # kernels = ['linear', 'poly', 'rbf']
     # C_values = [i * 0.1 for i in range(1, 11)]
     gamma_values = [0]
@@ -238,5 +235,5 @@ if __name__ == '__main__':
              large_image_path, img_out_dir, metrics_output_file) for kernel in kernels for C in C_values for gamma in gamma_values]
 
     # Use multiprocessing to parallelize the SVM training and evaluation
-    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+    with multiprocessing.Pool(processes=3) as pool:
         pool.starmap(run_svm, jobs)
