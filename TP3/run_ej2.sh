@@ -8,6 +8,14 @@ TRAIN_DIR="images/train"
 
 IMAGE_URL='https://get.pxhere.com/photo/grass-field-farm-meadow-prairie-food-cow-cattle-herd-pasture-grazing-livestock-mammal-agriculture-milk-farmland-close-up-graze-outdoors-bull-grassland-habitat-dairy-rural-area-dairy-cow-natural-environment-cattle-like-mammal-texas-longhorn-royalty-free-images-981776.jpg'
 
+# Check if JSON file is provided
+if [ -z "$1" ]; then
+    echo "Usagee: $0 <config_json>"
+    exit 1
+fi
+
+CONFIG_JSON="$1"
+
 # Create necessary directories
 mkdir -p "$BASE" "$OUT_DIR" "$TRAIN_DIR"
 
@@ -30,5 +38,5 @@ mkdir -p "$BASE" "$OUT_DIR" "$TRAIN_DIR"
 # fi
 
 # Run the Python script
-python3 -u python/ej_2.py "$TRAIN_DIR" "$IMAGE_PATH" "$OUT_DIR"
+python3 -u python/ej_2.py "$TRAIN_DIR" "$IMAGE_PATH" "$OUT_DIR" "$CONFIG_JSON"
 python3 -u python/ej_2_results.py $OUT_DIR/metrics.csv $OUT_DIR/metrics_processed.csv

@@ -1,6 +1,7 @@
 import time
 import joblib
 import sys
+import json
 import os
 import numpy as np
 from PIL import Image
@@ -305,7 +306,7 @@ def create_models(kernels, c, gamma, cache_size, degree):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print("Usage: python script.py <image_dir> <large_image_path> <img_out_dir>")
         sys.exit(1)
 
@@ -314,7 +315,16 @@ if __name__ == '__main__':
     image_dir = sys.argv[1]
     large_image_path = sys.argv[2]
     img_out_dir = sys.argv[3]
+    config_json_path = sys.argv[4]
 
+    with open(config_json_path, 'r') as f:
+        config = json.load(f)
+
+    kernels = config.get('kernels', [])
+    c_values = config.get('c', [])
+    gamma_values = config.get('gamma', [])
+    cache_size_values = config.get('cache_size', [])
+    degree_values = config.get('degree', [])
 
     # CONSTANTES 
     classes = {'vaca': 0, 'cielo': 1, 'pasto': 2}
@@ -331,7 +341,7 @@ if __name__ == '__main__':
 
     train_sets, test_sets = split_data_into_equal_sets(X, y, n_splits)
 
-    svc_models = create_models(kernels=['linear', 'rbf', 'poly'], c=[1,10], gamma=['scale'], cache_size=[500],  degree=[3])
+    svc_models = create_models(kernels=kernels, c=c_values, gamma=gamma_values, cache_size=cache_size_values,  degree=degree_values)
 
     # ARCHIVO DE SALIDA DE RESULTADOS
     metrics_output_file = os.path.join(img_out_dir, "metrics.csv")
