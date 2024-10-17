@@ -27,7 +27,7 @@ class linear_svc:
         return self.svm_clf.predict(x_test)
     
     def properties(self):
-        return f"kernel='{self.kernel}' and C={self.C:0.2f}"
+        return f"kernel='{self.kernel}' and C={self.c:0.2f}"
     
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};0;0"
@@ -331,16 +331,7 @@ if __name__ == '__main__':
 
     train_sets, test_sets = split_data_into_equal_sets(X, y, n_splits)
 
-    svc_models = create_models(kernels=['rbf', 'poly'], c=[500,200], gamma=['scale'], cache_size=[500],  degree=[3])
-
-    # Different kernels and C values to experiment with
-    # kernels = ['sigmoid']
-    #kernels = ['rbf']
-    #C_values = [500]
-    # kernels = ['linear', 'poly', 'rbf']
-    # C_values = [i * 0.1 for i in range(1, 11)]
-    #gamma_values = [0]
-    #print(C_values)
+    svc_models = create_models(kernels=['linear', 'rbf', 'poly'], c=[1,10], gamma=['scale'], cache_size=[500],  degree=[3])
 
     # ARCHIVO DE SALIDA DE RESULTADOS
     metrics_output_file = os.path.join(img_out_dir, "metrics.csv")

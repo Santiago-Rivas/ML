@@ -2,7 +2,7 @@
 
 BASE=output
 
-OUT_DIR="$BASE/new"
+OUT_DIR="$BASE/new2"
 IMAGE_PATH="images/cow.jpg"
 TRAIN_DIR="images/train"
 
@@ -31,4 +31,4 @@ mkdir -p "$BASE" "$OUT_DIR" "$TRAIN_DIR"
 
 # Run the Python script
 python3 -u python/ej_2.py "$TRAIN_DIR" "$IMAGE_PATH" "$OUT_DIR"
-#python3 -u python/ej_2_results.py $OUT_DIR/metrics.csv $OUT_DIR/metrics_processed.csv
+python3 -u python/ej_2_results.py $OUT_DIR/metrics.csv $OUT_DIR/metrics_processed.csv
