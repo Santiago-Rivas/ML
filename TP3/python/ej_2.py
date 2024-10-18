@@ -32,6 +32,9 @@ class linear_svc:
     
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};0;0"
+    
+    def get_model(self):
+        return self.svm_clf
 
 class poly_svc:
     def __init__(self, kernel, c, gamma, degree, cache_size):
@@ -56,6 +59,9 @@ class poly_svc:
     
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};{self.gamma};{self.degree}"
+    
+    def get_model(self):
+        return self.svm_clf
 
 class sigmoid_svc:
     def __init__(self, kernel, c, gamma, cache_size):
@@ -79,6 +85,9 @@ class sigmoid_svc:
     
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};{self.gamma};0"
+    
+    def get_model(self):
+        return self.svm_clf
 
 class rbf_svc:
     def __init__(self, kernel, c, gamma, cache_size):
@@ -102,6 +111,9 @@ class rbf_svc:
     
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};{self.gamma};0"
+    
+    def get_model(self):
+        return self.svm_clf
     
 
 def split_data_into_equal_sets(X, y, n_splits):
@@ -255,14 +267,14 @@ def run_svm(svc_model, train_sets, test_sets, classes, class_colors,
         print(f"\n{i}/{total} Printing CM to File {svc_model.properties()}")
 
         cm = confusion_matrix(y_test, y_pred, list(classes.values()))
-        cm_output_file = os.path.join(new_dir_path, f"cm_i-{i}_{svc_model.dir_name_string()}.txt")
+        cm_output_file = os.path.join(new_dir_path, f"cm_i_{i}_{svc_model.dir_name_string()}.txt")
         print_confusion_matrix_to_file(cm, list(classes.values()), cm_output_file)
 
         print(f"\n{i}/{total} Saving model {svc_model.properties()}")
 
         model_output_file = os.path.join(
-            new_dir_path, f"svm_model-i_{i}{svc_model.dir_name_string()}.joblib")
-        joblib.dump(svc_model, model_output_file)
+            new_dir_path, f"svm_model_i_{i}{svc_model.dir_name_string()}.joblib")
+        joblib.dump(svc_model.get_model() , model_output_file)
 
         print(f"\n{i}/{total} SVM model saved at {model_output_file}")
 
@@ -333,8 +345,8 @@ if __name__ == '__main__':
         1: [0, 0, 255],     # Blue
         2: [0, 255, 0]      # Green
     }
-    reduction_percent = 10
-    n_splits = 2
+    reduction_percent = config.get('reduction_percent')
+    n_splits = config.get('n_splits')
 
 
     X, y = load_pixels_as_data(image_dir, classes, reduction_percent)

@@ -44,4 +44,8 @@ class_colors = {
 }
 
 classified_image = classify_image(image_path, svm_clf, class_colors)
-classified_image.save(f"{image_out_dir}/classified_image.png")
+
+model_filename = os.path.basename(args.model_file)  # Get the model filename (e.g., svm_model_i_1_kernel_poly_C_1.00_gamma_scale_cache_500_degree_3.joblib)
+model_name, _ = os.path.splitext(model_filename)  # Remove the file extension (.joblib)
+output_filename = f"{model_name}.png"
+classified_image.save(f"{image_out_dir}/{output_filename}")
