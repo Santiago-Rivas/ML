@@ -10,6 +10,7 @@ from sklearn.svm import SVC
 import multiprocessing
 
 lock = None
+lock_final = None
 
 class linear_svc:
     def __init__(self, kernel, c, cache_size):
@@ -286,6 +287,46 @@ def run_svm(svc_model, train_sets, test_sets, classes, class_colors,
 
         i += 1
 
+def calculate_final_metrics(svc_model, x_train, y_train, x_test, y_test, classes, img_out_dir, metrics_output_file):
+    print(f"\nTraining SVM with {svc_model.properties()}")
+    unix_time = int(time.time())
+    new_dir_name = f"final_{unix_time}{svc_model.dir_name_string()}"
+    new_dir_path = os.path.join(img_out_dir, new_dir_name)
+    os.makedirs(new_dir_path, exist_ok=True)
+
+    print(f"\nTRAINING SVM with {svc_model.properties()}")
+
+    svc_model.train(x_train, y_train)
+    y_pred = svc_model.predict(x_test)
+
+    metrics = calculate_metrics(y_test, y_pred)
+
+    output_str = ""
+    for cls, metric in metrics.items():
+        output_str += (f"{svc_model.csv_properties()};{cls};"
+                        f"{metric['precision']:.4f};{metric['recall']:.4f};{metric['f1_score']:.4f};{metric['accuracy']:.4f}\n")
+
+    with lock:
+        print(f"\nPrinting to File {svc_model.properties()}")
+        with open(metrics_output_file, 'a') as f:
+            f.write(output_str)
+
+    print(f"\nPrinting CM to File {svc_model.properties()}")
+
+    cm = confusion_matrix(y_test, y_pred, list(classes.values()))
+    cm_output_file = os.path.join(new_dir_path, f"cm_{svc_model.dir_name_string()}.txt")
+    print_confusion_matrix_to_file(cm, list(classes.values()), cm_output_file)
+
+    print(f"\nSaving model {svc_model.properties()}")
+
+    model_output_file = os.path.join(
+        new_dir_path, f"svm_model_{svc_model.dir_name_string()}.joblib")
+    joblib.dump(svc_model.get_model() , model_output_file)
+
+    print(f"\nSVM model saved at {model_output_file}")
+
+    print(f"\nFinished {svc_model.properties()}")
+
 
 # PUEDE SER MAS EFICIENTE
 def create_models(kernels, c, gamma, cache_size, degree):
@@ -317,26 +358,16 @@ def create_models(kernels, c, gamma, cache_size, degree):
     return models
 
 
+def split_data(X, y, test_size=0.2, random_state=None):
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y)
+    return X_train, X_test, y_train, y_test
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 5:
         print("Usage: python script.py <image_dir> <large_image_path> <img_out_dir>")
         sys.exit(1)
-
-
-    # ARGUMENTOS
-    image_dir = sys.argv[1]
-    large_image_path = sys.argv[2]
-    img_out_dir = sys.argv[3]
-    config_json_path = sys.argv[4]
-
-    with open(config_json_path, 'r') as f:
-        config = json.load(f)
-
-    kernels = config.get('kernels', [])
-    c_values = config.get('c', [])
-    gamma_values = config.get('gamma', [])
-    cache_size_values = config.get('cache_size', [])
-    degree_values = config.get('degree', [])
 
     # CONSTANTES 
     classes = {'vaca': 0, 'cielo': 1, 'pasto': 2}
@@ -345,17 +376,39 @@ if __name__ == '__main__':
         1: [0, 0, 255],     # Blue
         2: [0, 255, 0]      # Green
     }
+
+    # ARGUMENTOS
+    image_dir = sys.argv[1]
+    large_image_path = sys.argv[2]
+    img_out_dir = sys.argv[3]
+    config_json_path = sys.argv[4]
+
+    # CONFIGS
+    with open(config_json_path, 'r') as f:
+        config = json.load(f)
+
+    kernels = config.get('kernels', [])
+    c_values = config.get('c', [])
+    gamma_values = config.get('gamma', [])
+    cache_size_values = config.get('cache_size', [])
+    degree_values = config.get('degree', [])
     reduction_percent = config.get('reduction_percent')
     n_splits = config.get('n_splits')
 
 
+    # AHORA SI EMPIEZO
     X, y = load_pixels_as_data(image_dir, classes, reduction_percent)
 
-    train_sets, test_sets = split_data_into_equal_sets(X, y, n_splits)
+    # Esto es para evaluar el C final que elegimos
+    X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.3, random_state=42)
+
+    # Esto es para elegir el mejor C con los datos de entrenamiento con validacion cruzada
+    train_sets, test_sets = split_data_into_equal_sets(X_train, y_train, n_splits)
 
     svc_models = create_models(kernels=kernels, c=c_values, gamma=gamma_values, cache_size=cache_size_values,  degree=degree_values)
 
-    # ARCHIVO DE SALIDA DE RESULTADOS
+
+    # ARCHIVO DE SALIDA DE RESULTADOS PARA ELEGIR C
     metrics_output_file = os.path.join(img_out_dir, "metrics.csv")
     if not os.path.exists(metrics_output_file):
         with open(metrics_output_file, 'w') as f:
@@ -369,3 +422,20 @@ if __name__ == '__main__':
 
     with multiprocessing.Pool(processes=3) as pool:
         pool.starmap(run_svm, jobs)
+    
+    print("FINISHED DEFINITION BEST MODEL")
+
+
+    # ARCHIVO DE SALIDA DE RESULTADOS PARA VER COMO LE FUE AL MEJOR C (Lo hago con todos para no definir aca "el mejor")
+    metrics_output_file = os.path.join(img_out_dir, "metrics_final.csv")
+    if not os.path.exists(metrics_output_file):
+        with open(metrics_output_file, 'w') as f:
+            f.write("kernel;c_value;gamma;degree;class;precision;recall;f1;accuracy\n")
+
+    jobs = [(svc_model, X_train, y_train, X_test, y_test ,classes, img_out_dir, metrics_output_file) 
+            for svc_model in svc_models]
+
+    with multiprocessing.Pool(processes=3) as pool:
+        pool.starmap(calculate_final_metrics, jobs)
+    
+    print("FINISHED DEFINITION METRICS OF BEST MODEL")

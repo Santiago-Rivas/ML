@@ -1,9 +1,9 @@
 {
     "kernels": ["rbf", "linear", "poly", "sigmoid"],
-    "c": [0.1, 1, 10, 100],
+    "c": [1, 10],
     "gamma": ["scale"],
     "cache_size": [500],
     "degree": [3],
-    "n_splits": 5,
-    "reduction_percent" : 50
+    "n_splits": 2,
+    "reduction_percent" : 10
 }
