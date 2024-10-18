@@ -17,23 +17,23 @@ class linear_svc:
         self.kernel = kernel
         self.c = c
         self.cache_size = cache_size
-    
+
     def dir_name_string(self):
         return f"_kernel_{self.kernel}_C_{self.c:0.2f}_cache_{self.cache_size}"
-    
+
     def train(self, x_train, y_train):
         self.svm_clf = SVC(kernel=self.kernel, C=self.c, cache_size=self.cache_size)
         self.svm_clf.fit(x_train, y_train)
 
     def predict(self, x_test):
         return self.svm_clf.predict(x_test)
-    
+
     def properties(self):
         return f"kernel='{self.kernel}' and C={self.c:0.2f}"
-    
+
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};0;0"
-    
+
     def get_model(self):
         return self.svm_clf
 
@@ -44,10 +44,10 @@ class poly_svc:
         self.gamma = gamma
         self.degree = degree
         self.cache_size = cache_size
-    
+
     def dir_name_string(self):
         return f"_kernel_{self.kernel}_C_{self.c:0.2f}_gamma_{self.gamma}_cache_{self.cache_size}_degree_{self.degree}"
-    
+
     def train(self, x_train, y_train):
         self.svm_clf = SVC(kernel=self.kernel, C=self.c, gamma=self.gamma, degree=self.degree, cache_size=self.cache_size)
         self.svm_clf.fit(x_train, y_train)
@@ -57,10 +57,10 @@ class poly_svc:
 
     def properties(self):
         return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma} and degree={self.degree}"
-    
+
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};{self.gamma};{self.degree}"
-    
+
     def get_model(self):
         return self.svm_clf
 
@@ -70,23 +70,23 @@ class sigmoid_svc:
         self.c = c
         self.gamma = gamma
         self.cache_size = cache_size
-    
+
     def dir_name_string(self):
         return f"_kernel_{self.kernel}_C_{self.c:0.2f}_cache_{self.cache_size}_gamma_{self.gamma}"
-    
+
     def train(self, x_train, y_train):
         self.svm_clf = SVC(kernel=self.kernel, C=self.c, gamma=self.gamma ,cache_size=self.cache_size)
         self.svm_clf.fit(x_train, y_train)
 
     def predict(self, x_test):
         return self.svm_clf.predict(x_test)
-    
+
     def properties(self):
         return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma}"
-    
+
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};{self.gamma};0"
-    
+
     def get_model(self):
         return self.svm_clf
 
@@ -96,26 +96,26 @@ class rbf_svc:
         self.c = c
         self.gamma = gamma
         self.cache_size = cache_size
-    
+
     def dir_name_string(self):
         return f"_kernel_{self.kernel}_C_{self.c:0.2f}_cache_{self.cache_size}_gamma_{self.gamma}"
-    
+
     def train(self, x_train, y_train):
         self.svm_clf = SVC(kernel=self.kernel, C=self.c, gamma=self.gamma ,cache_size=self.cache_size)
         self.svm_clf.fit(x_train, y_train)
 
     def predict(self, x_test):
         return self.svm_clf.predict(x_test)
-    
+
     def properties(self):
         return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma}"
-    
+
     def csv_properties(self):
         return f"{self.kernel};{self.c:0.2f};{self.gamma};0"
-    
+
     def get_model(self):
         return self.svm_clf
-    
+
 
 def split_data_into_equal_sets(X, y, n_splits):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
@@ -321,7 +321,7 @@ def calculate_final_metrics(svc_model, x_train, y_train, x_test, y_test, classes
 
     model_output_file = os.path.join(
         new_dir_path, f"svm_model_{svc_model.dir_name_string()}.joblib")
-    joblib.dump(svc_model.get_model() , model_output_file)
+    joblib.dump(svc_model.get_model(), model_output_file)
 
     print(f"\nSVM model saved at {model_output_file}")
 
@@ -352,7 +352,7 @@ def create_models(kernels, c, gamma, cache_size, degree):
                 for c_value in c:
                     for cache_size_value in cache_size:
                         for gamma_value in gamma:
-                            models.append(sigmoid_svc(kernel, c_value, gamma_value, cache_size_value)) # degree es irrelevante
+                            models.append(sigmoid_svc(kernel, c_value, gamma_value, cache_size_value))  # degree es irrelevante
             case _:
                 raise ValueError(f"Kernel desconocido: {kernel}")
     return models
@@ -369,7 +369,7 @@ if __name__ == '__main__':
         print("Usage: python script.py <image_dir> <large_image_path> <img_out_dir>")
         sys.exit(1)
 
-    # CONSTANTES 
+    # CONSTANTES
     classes = {'vaca': 0, 'cielo': 1, 'pasto': 2}
     class_colors = {
         0: [255, 0, 0],     # Red
@@ -394,7 +394,7 @@ if __name__ == '__main__':
     degree_values = config.get('degree', [])
     reduction_percent = config.get('reduction_percent')
     n_splits = config.get('n_splits')
-
+    procs = config.get('procs')
 
     # AHORA SI EMPIEZO
     X, y = load_pixels_as_data(image_dir, classes, reduction_percent)
@@ -415,27 +415,26 @@ if __name__ == '__main__':
             f.write("kernel;c_value;gamma;degree;iteration;class;precision;recall;f1;accuracy\n")
     lock = multiprocessing.Lock()
 
-
     # LISTA DE ARGUMENTOS PARA EL THREAD
-    jobs = [(svc_model, train_sets, test_sets, classes, class_colors, large_image_path, img_out_dir, metrics_output_file) 
+    jobs = [(svc_model, train_sets, test_sets, classes, class_colors, large_image_path, img_out_dir, metrics_output_file)
             for svc_model in svc_models]
 
     with multiprocessing.Pool(processes=3) as pool:
         pool.starmap(run_svm, jobs)
-    
+
     print("FINISHED DEFINITION BEST MODEL")
 
-
+    unix_time = int(time.time())
     # ARCHIVO DE SALIDA DE RESULTADOS PARA VER COMO LE FUE AL MEJOR C (Lo hago con todos para no definir aca "el mejor")
-    metrics_output_file = os.path.join(img_out_dir, "metrics_final.csv")
+    metrics_output_file = os.path.join(img_out_dir, f"{unix_time}_metrics_final.csv")
     if not os.path.exists(metrics_output_file):
         with open(metrics_output_file, 'w') as f:
             f.write("kernel;c_value;gamma;degree;class;precision;recall;f1;accuracy\n")
 
-    jobs = [(svc_model, X_train, y_train, X_test, y_test ,classes, img_out_dir, metrics_output_file) 
+    jobs = [(svc_model, X_train, y_train, X_test, y_test ,classes, img_out_dir, metrics_output_file)
             for svc_model in svc_models]
 
-    with multiprocessing.Pool(processes=3) as pool:
+    with multiprocessing.Pool(processes=procs) as pool:
         pool.starmap(calculate_final_metrics, jobs)
-    
+
     print("FINISHED DEFINITION METRICS OF BEST MODEL")
