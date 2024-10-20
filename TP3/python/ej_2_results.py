@@ -53,6 +53,7 @@ def plot_metric(metric_name):
                      y=metrics[f'{metric_name}_mean'][i],
                      yerr=metrics[f'{metric_name}_std'][i],
                      fmt='none', c='black', capsize=3)
+    plt.xscale('log')
 
     plt.title(f'{metric_name.capitalize()} by Kernel and c_value')
     plt.xlabel('C Value')

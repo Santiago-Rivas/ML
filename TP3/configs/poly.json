@@ -1,9 +1,9 @@
 {
     "kernels": ["poly"],
-    "c": [1, 10],
+    "c": [1],
     "gamma": ["scale"],
     "cache_size": [500],
-    "degree": [3],
+    "degree": [3, 5],
     "n_splits": 2,
-    "reduction_percent" : 50
+    "reduction_percent" : 100
 }
