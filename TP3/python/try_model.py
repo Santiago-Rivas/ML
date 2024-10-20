@@ -13,7 +13,7 @@ import argparse
 def classify_image(image_path, svm_clf, class_colors):
     img = Image.open(image_path)
     img = img.convert('RGB')
-    img_data = np.array(img)
+    img_data = np.array(img)  / 255.0
 
     pixels = img_data.reshape(-1, 3)
     pixel_classes = svm_clf.predict(pixels)

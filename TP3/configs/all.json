@@ -1,12 +1,12 @@
 {
     "kernels": ["poly"],
-    "c": [0.1, 1, 10],
-    "gamma": [0.1, 1, 10],
+    "c": [0.1],
+    "gamma": [1],
     "cache_size": [500],
-    "degree": [2, 3, 4, 5, 6],
-    "coefs0": [1, 10, 100],
-    "n_splits": 5,
-    "reduction_percent" : 100,
-    "procs" : 8
+    "degree": [4],
+    "coefs0": [10],
+    "n_splits": 2,
+    "reduction_percent" : 50,
+    "procs" : 2
 }
 

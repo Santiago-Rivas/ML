@@ -289,8 +289,7 @@ def run_svm(svc_model, train_sets, test_sets, classes, class_colors,
         print(f"\n{i}/{total} Printing CM to File {svc_model.properties()}")
 
         cm = confusion_matrix(y_test, y_pred, list(classes.values()))
-        cm_output_file = os.path.join(new_dir_path, f"cm_i_{i}_{
-                                      svc_model.dir_name_string()}.txt")
+        cm_output_file = os.path.join(new_dir_path, f"cm_i_{i}_{svc_model.dir_name_string()}.txt")
         print_confusion_matrix_to_file(
             cm, list(classes.values()), cm_output_file)
 
