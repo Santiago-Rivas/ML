@@ -7,48 +7,6 @@ import argparse
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def plot_metric_degree(metrics, metric_name, param='c_value'):
-    plt.figure(figsize=(12, 6), dpi=150)
-
-    sns.scatterplot(data=metrics, x='degree', y=f'{metric_name}_mean', hue=param,
-                    s=100, palette='muted', style=param, markers=['o', 's', 'D'])
-
-    for i in range(len(metrics)):
-        plt.errorbar(x=metrics['degree'][i],
-                     y=metrics[f'{metric_name}_mean'][i],
-                     yerr=metrics[f'{metric_name}_std'][i],
-                     fmt='none', c='black', capsize=3)
-
-    plt.title(f'{metric_name.capitalize()} by degree and {param}')
-    plt.xlabel("Degree")
-    plt.ylabel(f'{metric_name.capitalize()}')
-    plt.legend(title=f"{param}", bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_metric_vs_prop(metrics, prop, metric_name, param='c_value'):
-    plt.figure(figsize=(12, 6), dpi=150)
-
-    sns.scatterplot(data=metrics, x=prop, y=f'{metric_name}_mean', hue=param,
-                    s=100, palette='muted', style=param, markers=['o', 's', 'D'])
-
-    for i in range(len(metrics)):
-        plt.errorbar(x=metrics[prop][i],
-                     y=metrics[f'{metric_name}_mean'][i],
-                     yerr=metrics[f'{metric_name}_std'][i],
-                     fmt='none', c='black', capsize=3)
-
-    plt.title(f'{metric_name.capitalize()} by degree and {param}')
-    plt.xlabel(prop)
-    plt.ylabel(f'{metric_name.capitalize()}')
-    plt.legend(title=f"{param}", bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
-
 def plot_bar_metric_vs_prop(metrics, prop='c_value', metric_name='accuracy', param=None, filters=None, ylim=0.95):
     plt.figure(figsize=(12, 6), dpi=150)
 
@@ -57,7 +15,7 @@ def plot_bar_metric_vs_prop(metrics, prop='c_value', metric_name='accuracy', par
             metrics = metrics[metrics[filter[0]] ==
                               filter[1]].reset_index(drop=True)
 
-    print_all_merics(metrics)
+    # print_all_merics(metrics)
     # Use sns.barplot instead of scatterplot
     if param is None:
         ax = sns.barplot(data=metrics, x=prop, y=f'{
@@ -72,21 +30,10 @@ def plot_bar_metric_vs_prop(metrics, prop='c_value', metric_name='accuracy', par
 
     # Add error bars at the bar positions
     for i, bar_pos in enumerate(bar_positions):
-        print("i:", i)
-        print("bar_pos:", bar_pos)
-        print("mean:", metrics[f'{metric_name}_mean'][i])
-        print("std:", metrics[f'{metric_name}_std'][i])
         plt.errorbar(x=bar_pos,
                      y=metrics[f'{metric_name}_mean'][i],
                      yerr=metrics[f'{metric_name}_std'][i],
                      fmt='none', c='black', capsize=3)
-
-    # Add error bars for standard deviation
-    # for i in range(len(metrics)):
-    #     plt.errorbar(x=i,  # positions on the x-axis (which is now categorical)
-    #                  y=metrics[f'{metric_name}_mean'][i],
-    #                  yerr=metrics[f'{metric_name}_std'][i],
-    #                  fmt='none', c='black', capsize=3)
 
     filter_text = ""
     if filters is not None:
@@ -102,60 +49,9 @@ def plot_bar_metric_vs_prop(metrics, prop='c_value', metric_name='accuracy', par
             1.05, 1), loc='upper left')
 
     plt.xlabel(prop)
-    # plt.ylim(min(metrics[f'{metric_name}_mean']) - max(metrics[f'{metric_name}_std']) - 0.1, 1)
     plt.ylim(ylim, 1)
     plt.ylabel(f'{metric_name.capitalize()}')
     plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_3d_bar_metric_vs_prop(metrics, prop, metric_name, param='coef0', bars='c_value'):
-    fig = plt.figure(figsize=(10, 8), dpi=150)
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Extract the data
-    x_vals = metrics[prop]
-    y_vals = metrics[f'{metric_name}_mean']
-    z_vals = metrics[bars]
-
-    # Convert categorical data into numeric values (if necessary)
-    unique_props = np.unique(x_vals)
-    x_numeric = np.array([np.where(unique_props == x)[0][0] for x in x_vals])
-
-    unique_z_vals = np.unique(z_vals)
-    z_numeric = np.array([np.where(unique_z_vals == z)[0][0] for z in z_vals])
-
-    # Map the 'param' values to colors (for example, by mapping coef0)
-    param_values = metrics[param]
-    unique_param_vals = np.unique(param_values)
-    color_map = plt.get_cmap('viridis')  # You can choose any colormap
-    colors = [color_map(np.where(unique_param_vals == p)[0]
-                        [0] / len(unique_param_vals)) for p in param_values]
-
-    # Plot each bar
-    dx = dy = 0.5  # width and depth of bars
-    for i in range(len(metrics)):
-        ax.bar3d(x_numeric[i], z_numeric[i], 0, dx, dy,
-                 y_vals[i], color=colors[i], alpha=0.8)
-
-    # Set the labels
-    ax.set_xlabel(prop.capitalize())
-    ax.set_ylabel(f'{bars.capitalize()}')
-    ax.set_zlabel(f'{metric_name.capitalize()}')
-
-    # Set ticks for x-axis and z-axis to show categorical values
-    ax.set_xticks(np.arange(len(unique_props)))
-    ax.set_xticklabels(unique_props, rotation=45, ha='right')
-
-    ax.set_yticks(np.arange(len(unique_z_vals)))
-    ax.set_yticklabels(unique_z_vals)
-
-    # Title
-    plt.title(f'{metric_name.capitalize()} by {prop} and {param}')
-    plt.legend()
-
-    # Show the plot
     plt.tight_layout()
     plt.show()
 
