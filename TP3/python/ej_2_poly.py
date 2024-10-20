@@ -146,8 +146,5 @@ def main():
 
     exit()
 
-    for metric in ['precision', 'recall', 'f1', 'accuracy']:
-        plot_metric_degree(metric)
-
 
 main()
