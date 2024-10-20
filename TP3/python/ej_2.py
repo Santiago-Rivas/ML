@@ -186,7 +186,7 @@ def print_confusion_matrix_to_file(matrix, classes, output_file):
                     " ".join(f"{count:^7}" for count in row) + "\n")
 
 
-def load_pixels_as_data(image_dir, classes, reduction_percent=100):
+def load_pixels_as_data(image_dir, classes, square_size=1, reduction_percent=100):
     X = []
     y = []
 
@@ -199,25 +199,44 @@ def load_pixels_as_data(image_dir, classes, reduction_percent=100):
             img = img.convert('RGB')
 
             img_data = np.array(img)
-            pixels = img_data.reshape(-1, 3)
-            print(pixels)
 
-            # Calculate number of pixels to keep
-            num_pixels = pixels.shape[0]
-            num_pixels_to_keep = int(num_pixels * (reduction_percent / 100))
-            print(num_pixels)
-            print(num_pixels_to_keep)
+            # Dimensiones de la imagen
+            height, width, _ = img_data.shape
 
-            # Randomly select a subset of pixels
-            selected_indices = np.random.choice(
-                num_pixels, num_pixels_to_keep, replace=False)
-            X.append(pixels[selected_indices])
-            y.append(np.full(selected_indices.shape[0], class_num))
+            # Para almacenar los bloques
+            blocks = []
 
-    X = np.vstack(X)
+            # Recorrer la imagen en bloques de tamaño square_size x square_size
+            for i in range(0, height, square_size):
+                for j in range(0, width, square_size):
+                    block = img_data[i:i+square_size, j:j+square_size]
+                    if block.shape[0] == square_size and block.shape[1] == square_size:  # Asegurarse de que el bloque sea del tamaño correcto
+                        # Aplanar el bloque y agregar a la lista
+                        flattened_block = block.reshape(-1, 3)  # Aplana a [N*píxeles, RGB]
+                        blocks.append(flattened_block)
+
+            # Convertir a numpy array
+            blocks = np.array(blocks, dtype=object)
+
+            num_blocks = len(blocks)
+
+            # Calcular cuántos bloques mantener según reduction_percent
+            num_blocks_to_keep = int(num_blocks * (reduction_percent / 100))
+
+            # Seleccionar aleatoriamente un subconjunto de bloques
+            selected_indices = np.random.choice(num_blocks, num_blocks_to_keep, replace=False)
+            selected_blocks = blocks[selected_indices]
+
+            # Aplanar cada bloque seleccionado y agregarlo a X
+            for block in selected_blocks:
+                X.append(block.flatten())  # Aplana el bloque a un vector
+
+            y.append(np.full(selected_blocks.shape[0], class_num))
+
+    # Convertir y a un array de numpy
     y = np.hstack(y)
 
-    return X, y
+    return np.array(X, dtype=object), y  # X será un array de objetos para mantener la forma de vectores
 
 
 def classify_image(image_path, svm_clf, class_colors):
@@ -397,7 +416,7 @@ if __name__ == '__main__':
 
 
     # AHORA SI EMPIEZO
-    X, y = load_pixels_as_data(image_dir, classes, reduction_percent)
+    X, y = load_pixels_as_data(image_dir, classes, 5, reduction_percent)
 
     # Esto es para evaluar el C final que elegimos
     X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.3, random_state=42)
