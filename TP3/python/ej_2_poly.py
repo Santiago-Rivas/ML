@@ -101,7 +101,7 @@ def main():
 
     if final == "final":
         metrics.columns = ['_'.join(col).strip()
-                                    for col in metrics.columns.values]
+                           for col in metrics.columns.values]
         metrics = metrics.reset_index()
         cols = groupby_cols
         cols.extend(['precision_mean', 'precision_std',
@@ -114,7 +114,7 @@ def main():
             'iteration'].count().reset_index(name='count')
 
         metrics.columns = ['_'.join(col).strip()
-                                    for col in metrics.columns.values]
+                           for col in metrics.columns.values]
         metrics = metrics.reset_index()
         metrics = metrics.merge(count, on=groupby_cols)
         cols = groupby_cols
@@ -136,10 +136,12 @@ def main():
                                 ('degree', 1), ('coef0', 0)], ylim=0.9)
     elif kernel == 'sigmoid':
         # Necesita minimo un filtro
-        plot_bar_metric_vs_prop(metrics, metric_name='f1', prop='gamma', param="c_value", filters=[('coef0', 0)], ylim=0)
+        plot_bar_metric_vs_prop(metrics, metric_name='f1', prop='gamma',
+                                param="c_value", filters=[('coef0', 0)], ylim=0)
     elif kernel == 'rbf':
         # No neceita filtros
-        plot_bar_metric_vs_prop(metrics, metric_name='f1', prop='gamma', param="c_value")
+        plot_bar_metric_vs_prop(metrics, metric_name='f1',
+                                prop='gamma', param="c_value")
     elif kernel == 'linear':
         # No neceita filtros ni param
         plot_bar_metric_vs_prop(metrics, metric_name='f1', prop='c_value')
