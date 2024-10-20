@@ -38,5 +38,5 @@ mkdir -p "$BASE" "$OUT_DIR" "$TRAIN_DIR"
 # fi
 
 # Run the Python script
-#python3 -u python/ej_2.py "$TRAIN_DIR" "$IMAGE_PATH" "$OUT_DIR" "$CONFIG_JSON"
+python3 -u python/ej_2.py "$TRAIN_DIR" "$IMAGE_PATH" "$OUT_DIR" "$CONFIG_JSON"
 python3 -u python/ej_2_results.py $OUT_DIR/metrics.csv $OUT_DIR/metrics_processed.csv

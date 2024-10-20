@@ -1,4 +1,0 @@
-kernel;c_value;gamma;degree;class;precision;recall;f1;accuracy
-poly;1.00;scale;3;0;0.9829;0.9879;0.9854;0.9876
-poly;1.00;scale;3;1;0.9996;1.0000;0.9998;0.9999
-poly;1.00;scale;3;2;0.9837;0.9765;0.9801;0.9877
