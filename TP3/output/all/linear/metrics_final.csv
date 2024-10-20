@@ -1,0 +1,4 @@
+kernel;c_value;class;precision;recall;f1;accuracy
+linear;1.00;0;0.9769;0.9897;0.9832;0.9857
+linear;1.00;1;0.9988;0.9998;0.9993;0.9996
+linear;1.00;2;0.9867;0.9681;0.9773;0.9861
