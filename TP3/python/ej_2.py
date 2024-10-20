@@ -12,6 +12,7 @@ import multiprocessing
 lock = None
 lock_final = None
 
+
 class linear_svc:
     def __init__(self, kernel, c, cache_size):
         self.kernel = kernel
@@ -22,7 +23,8 @@ class linear_svc:
         return f"_kernel_{self.kernel}_C_{self.c:0.2f}_cache_{self.cache_size}"
 
     def train(self, x_train, y_train):
-        self.svm_clf = SVC(kernel=self.kernel, C=self.c, cache_size=self.cache_size)
+        self.svm_clf = SVC(kernel=self.kernel, C=self.c,
+                           cache_size=self.cache_size)
         self.svm_clf.fit(x_train, y_train)
 
     def predict(self, x_test):
@@ -32,63 +34,81 @@ class linear_svc:
         return f"kernel='{self.kernel}' and C={self.c:0.2f}"
 
     def csv_properties(self):
-        return f"{self.kernel};{self.c:0.2f};0;0"
+        return f"{self.kernel};{self.c:0.2f}"
 
     def get_model(self):
         return self.svm_clf
 
+
 class poly_svc:
-    def __init__(self, kernel, c, gamma, degree, cache_size):
+    def __init__(self, kernel, c, gamma, degree, coef0, cache_size):
         self.kernel = kernel
         self.c = c
         self.gamma = gamma
         self.degree = degree
         self.cache_size = cache_size
+        self.coef0 = coef0
 
     def dir_name_string(self):
-        return f"_kernel_{self.kernel}_C_{self.c:0.2f}_gamma_{self.gamma}_cache_{self.cache_size}_degree_{self.degree}"
+        return f"_kernel_{self.kernel}_C_{self.c:0.2f}_gamma_{self.gamma}_cache_{self.cache_size}_degree_{self.degree}_coef0_{self.coef0}"
 
     def train(self, x_train, y_train):
-        self.svm_clf = SVC(kernel=self.kernel, C=self.c, gamma=self.gamma, degree=self.degree, cache_size=self.cache_size)
+        self.svm_clf = SVC(
+            kernel=self.kernel,
+            C=self.c,
+            gamma=self.gamma,
+            degree=self.degree,
+            cache_size=self.cache_size,
+            coef0=self.coef0
+        )
         self.svm_clf.fit(x_train, y_train)
 
     def predict(self, x_test):
         return self.svm_clf.predict(x_test)
 
     def properties(self):
-        return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma} and degree={self.degree}"
+        return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma} and degree={self.degree} and coef0={self.coef0}"
 
     def csv_properties(self):
-        return f"{self.kernel};{self.c:0.2f};{self.gamma};{self.degree}"
+        return f"{self.kernel};{self.c:0.2f};{self.gamma};{self.degree};{self.coef0}"
 
     def get_model(self):
         return self.svm_clf
 
+
 class sigmoid_svc:
-    def __init__(self, kernel, c, gamma, cache_size):
+    def __init__(self, kernel, c, gamma, coef0, cache_size):
         self.kernel = kernel
         self.c = c
         self.gamma = gamma
+        self.coef0 = coef0
         self.cache_size = cache_size
 
     def dir_name_string(self):
-        return f"_kernel_{self.kernel}_C_{self.c:0.2f}_cache_{self.cache_size}_gamma_{self.gamma}"
+        return f"_kernel_{self.kernel}_C_{self.c:0.2f}_cache_{self.cache_size}_gamma_{self.gamma}_coef0_{self.coef0}"
 
     def train(self, x_train, y_train):
-        self.svm_clf = SVC(kernel=self.kernel, C=self.c, gamma=self.gamma ,cache_size=self.cache_size)
+        self.svm_clf = SVC(
+            kernel=self.kernel,
+            C=self.c,
+            gamma=self.gamma,
+            cache_size=self.cache_size,
+            coef0=self.coef0
+        )
         self.svm_clf.fit(x_train, y_train)
 
     def predict(self, x_test):
         return self.svm_clf.predict(x_test)
 
     def properties(self):
-        return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma}"
+        return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma} and coef0={self.coef0}"
 
     def csv_properties(self):
-        return f"{self.kernel};{self.c:0.2f};{self.gamma};0"
+        return f"{self.kernel};{self.c:0.2f};{self.gamma};{self.coef0}"
 
     def get_model(self):
         return self.svm_clf
+
 
 class rbf_svc:
     def __init__(self, kernel, c, gamma, cache_size):
@@ -101,7 +121,8 @@ class rbf_svc:
         return f"_kernel_{self.kernel}_C_{self.c:0.2f}_cache_{self.cache_size}_gamma_{self.gamma}"
 
     def train(self, x_train, y_train):
-        self.svm_clf = SVC(kernel=self.kernel, C=self.c, gamma=self.gamma ,cache_size=self.cache_size)
+        self.svm_clf = SVC(kernel=self.kernel, C=self.c,
+                           gamma=self.gamma, cache_size=self.cache_size)
         self.svm_clf.fit(x_train, y_train)
 
     def predict(self, x_test):
@@ -111,7 +132,7 @@ class rbf_svc:
         return f"kernel='{self.kernel}' and C={self.c:0.2f} and gamma={self.gamma}"
 
     def csv_properties(self):
-        return f"{self.kernel};{self.c:0.2f};{self.gamma};0"
+        return f"{self.kernel};{self.c:0.2f};{self.gamma}"
 
     def get_model(self):
         return self.svm_clf
@@ -198,7 +219,7 @@ def load_pixels_as_data(image_dir, classes, reduction_percent=100):
             img = Image.open(img_path)
             img = img.convert('RGB')
 
-            img_data = np.array(img)
+            img_data = np.array(img) / 255.0
             pixels = img_data.reshape(-1, 3)
             print(pixels)
 
@@ -268,14 +289,16 @@ def run_svm(svc_model, train_sets, test_sets, classes, class_colors,
         print(f"\n{i}/{total} Printing CM to File {svc_model.properties()}")
 
         cm = confusion_matrix(y_test, y_pred, list(classes.values()))
-        cm_output_file = os.path.join(new_dir_path, f"cm_i_{i}_{svc_model.dir_name_string()}.txt")
-        print_confusion_matrix_to_file(cm, list(classes.values()), cm_output_file)
+        cm_output_file = os.path.join(new_dir_path, f"cm_i_{i}_{
+                                      svc_model.dir_name_string()}.txt")
+        print_confusion_matrix_to_file(
+            cm, list(classes.values()), cm_output_file)
 
         print(f"\n{i}/{total} Saving model {svc_model.properties()}")
 
         model_output_file = os.path.join(
             new_dir_path, f"svm_model_i_{i}{svc_model.dir_name_string()}.joblib")
-        joblib.dump(svc_model.get_model() , model_output_file)
+        joblib.dump(svc_model.get_model(), model_output_file)
 
         print(f"\n{i}/{total} SVM model saved at {model_output_file}")
 
@@ -286,6 +309,7 @@ def run_svm(svc_model, train_sets, test_sets, classes, class_colors,
         print(f"\nFinished {svc_model.properties()}")
 
         i += 1
+
 
 def calculate_final_metrics(svc_model, x_train, y_train, x_test, y_test, classes, img_out_dir, metrics_output_file):
     print(f"\nTraining SVM with {svc_model.properties()}")
@@ -304,7 +328,7 @@ def calculate_final_metrics(svc_model, x_train, y_train, x_test, y_test, classes
     output_str = ""
     for cls, metric in metrics.items():
         output_str += (f"{svc_model.csv_properties()};{cls};"
-                        f"{metric['precision']:.4f};{metric['recall']:.4f};{metric['f1_score']:.4f};{metric['accuracy']:.4f}\n")
+                       f"{metric['precision']:.4f};{metric['recall']:.4f};{metric['f1_score']:.4f};{metric['accuracy']:.4f}\n")
 
     with lock:
         print(f"\nPrinting to File {svc_model.properties()}")
@@ -314,7 +338,8 @@ def calculate_final_metrics(svc_model, x_train, y_train, x_test, y_test, classes
     print(f"\nPrinting CM to File {svc_model.properties()}")
 
     cm = confusion_matrix(y_test, y_pred, list(classes.values()))
-    cm_output_file = os.path.join(new_dir_path, f"cm_{svc_model.dir_name_string()}.txt")
+    cm_output_file = os.path.join(
+        new_dir_path, f"cm_{svc_model.dir_name_string()}.txt")
     print_confusion_matrix_to_file(cm, list(classes.values()), cm_output_file)
 
     print(f"\nSaving model {svc_model.properties()}")
@@ -329,30 +354,38 @@ def calculate_final_metrics(svc_model, x_train, y_train, x_test, y_test, classes
 
 
 # PUEDE SER MAS EFICIENTE
-def create_models(kernels, c, gamma, cache_size, degree):
+def create_models(kernels, c, gamma, cache_size, degree, coefs0):
+    print(kernels, c, gamma, cache_size, degree, coefs0)
     models = []
     for kernel in kernels:
         match kernel:
             case 'linear':
                 for c_value in c:
                     for cache_size_value in cache_size:
-                        models.append(linear_svc(kernel, c_value, cache_size_value))
+                        models.append(linear_svc(
+                            kernel, c_value, cache_size_value))
             case 'poly':
                 for c_value in c:
                     for cache_size_value in cache_size:
                         for gamma_value in gamma:
                             for degree_value in degree:
-                                models.append(poly_svc(kernel, c_value, gamma_value, degree_value, cache_size_value))
+                                for coef0 in coefs0:
+                                    models.append(
+                                        poly_svc(kernel, c_value, gamma_value, degree_value, coef0, cache_size_value))
             case 'rbf':
                 for c_value in c:
                     for cache_size_value in cache_size:
                         for gamma_value in gamma:
-                            models.append(rbf_svc(kernel, c_value, gamma_value, cache_size_value))
+                            models.append(
+                                rbf_svc(kernel, c_value, gamma_value, cache_size_value))
             case 'sigmoid':
                 for c_value in c:
                     for cache_size_value in cache_size:
                         for gamma_value in gamma:
-                            models.append(sigmoid_svc(kernel, c_value, gamma_value, cache_size_value))  # degree es irrelevante
+                            for coef0 in coefs0:
+                                # degree es irrelevante
+                                models.append(sigmoid_svc(
+                                    kernel, c_value, gamma_value, coef0, cache_size_value))
             case _:
                 raise ValueError(f"Kernel desconocido: {kernel}")
     return models
@@ -387,11 +420,13 @@ if __name__ == '__main__':
     with open(config_json_path, 'r') as f:
         config = json.load(f)
 
+    print(config)
     kernels = config.get('kernels', [])
     c_values = config.get('c', [])
     gamma_values = config.get('gamma', [])
     cache_size_values = config.get('cache_size', [])
     degree_values = config.get('degree', [])
+    coefs0 = config.get('coefs0', [])
     reduction_percent = config.get('reduction_percent')
     n_splits = config.get('n_splits')
     procs = config.get('procs')
@@ -400,39 +435,69 @@ if __name__ == '__main__':
     X, y = load_pixels_as_data(image_dir, classes, reduction_percent)
 
     # Esto es para evaluar el C final que elegimos
-    X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = split_data(
+        X, y, test_size=0.3, random_state=42)
 
     # Esto es para elegir el mejor C con los datos de entrenamiento con validacion cruzada
-    train_sets, test_sets = split_data_into_equal_sets(X_train, y_train, n_splits)
+    train_sets, test_sets = split_data_into_equal_sets(
+        X_train, y_train, n_splits)
 
-    svc_models = create_models(kernels=kernels, c=c_values, gamma=gamma_values, cache_size=cache_size_values,  degree=degree_values)
+    svc_models = create_models(kernels=kernels, c=c_values, gamma=gamma_values,
+                               cache_size=cache_size_values,  degree=degree_values, coefs0=coefs0)
 
-
-    # ARCHIVO DE SALIDA DE RESULTADOS PARA ELEGIR C
-    metrics_output_file = os.path.join(img_out_dir, "metrics.csv")
-    if not os.path.exists(metrics_output_file):
-        with open(metrics_output_file, 'w') as f:
-            f.write("kernel;c_value;gamma;degree;iteration;class;precision;recall;f1;accuracy\n")
     lock = multiprocessing.Lock()
+    jobs = []
+    for svc_model in svc_models:
+        kernel_output_dir = os.path.join(img_out_dir, svc_model.kernel)
+        # Create kernel directory if it doesn't exist
+        os.makedirs(kernel_output_dir, exist_ok=True)
 
-    # LISTA DE ARGUMENTOS PARA EL THREAD
-    jobs = [(svc_model, train_sets, test_sets, classes, class_colors, large_image_path, img_out_dir, metrics_output_file)
-            for svc_model in svc_models]
+        metrics_output_file = os.path.join(kernel_output_dir, "metrics.csv")
+        if not os.path.exists(metrics_output_file):
+            with open(metrics_output_file, 'w') as f:
+                if svc_model.kernel == 'poly':
+                    f.write(
+                        "kernel;c_value;gamma;degree;coef0;iteration;class;precision;recall;f1;accuracy\n")
+                elif svc_model.kernel == 'rbf':
+                    f.write(
+                        "kernel;c_value;gamma;iteration;class;precision;recall;f1;accuracy\n")
+                elif svc_model.kernel == 'sigmoid':
+                    f.write(
+                        "kernel;c_value;gamma;coef0;iteration;class;precision;recall;f1;accuracy\n")
+                elif svc_model.kernel == 'linear':
+                    f.write(
+                        "kernel;c_value;iteration;class;precision;recall;f1;accuracy\n")
 
-    with multiprocessing.Pool(processes=3) as pool:
+        jobs.append((svc_model, train_sets, test_sets, classes, class_colors,
+                    large_image_path, kernel_output_dir, metrics_output_file))
+
+    with multiprocessing.Pool(processes=procs) as pool:
         pool.starmap(run_svm, jobs)
 
     print("FINISHED DEFINITION BEST MODEL")
 
-    unix_time = int(time.time())
-    # ARCHIVO DE SALIDA DE RESULTADOS PARA VER COMO LE FUE AL MEJOR C (Lo hago con todos para no definir aca "el mejor")
-    metrics_output_file = os.path.join(img_out_dir, f"{unix_time}_metrics_final.csv")
-    if not os.path.exists(metrics_output_file):
-        with open(metrics_output_file, 'w') as f:
-            f.write("kernel;c_value;gamma;degree;class;precision;recall;f1;accuracy\n")
+    jobs = []
+    for svc_model in svc_models:
+        kernel_output_dir = os.path.join(img_out_dir, svc_model.kernel)
+        # ARCHIVO DE SALIDA DE RESULTADOS PARA VER COMO LE FUE AL MEJOR C (Lo hago con todos para no definir aca "el mejor")
+        metrics_output_file = os.path.join(
+            kernel_output_dir, f"metrics_final.csv")
+        if not os.path.exists(metrics_output_file):
+            with open(metrics_output_file, 'w') as f:
+                if svc_model.kernel == 'poly':
+                    f.write(
+                        "kernel;c_value;gamma;degree;coef0;class;precision;recall;f1;accuracy\n")
+                elif svc_model.kernel == 'rbf':
+                    f.write(
+                        "kernel;c_value;gamma;class;precision;recall;f1;accuracy\n")
+                elif svc_model.kernel == 'sigmoid':
+                    f.write(
+                        "kernel;c_value;gamma;coef0;class;precision;recall;f1;accuracy\n")
+                elif svc_model.kernel == 'linear':
+                    f.write("kernel;c_value;class;precision;recall;f1;accuracy\n")
 
-    jobs = [(svc_model, X_train, y_train, X_test, y_test ,classes, img_out_dir, metrics_output_file)
-            for svc_model in svc_models]
+        jobs.append((svc_model, X_train, y_train, X_test, y_test,
+                    classes, kernel_output_dir, metrics_output_file))
 
     with multiprocessing.Pool(processes=procs) as pool:
         pool.starmap(calculate_final_metrics, jobs)
