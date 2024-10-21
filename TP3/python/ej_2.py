@@ -416,7 +416,7 @@ if __name__ == '__main__':
 
 
     # AHORA SI EMPIEZO
-    X, y = load_pixels_as_data(image_dir, classes, 20, reduction_percent)
+    X, y = load_pixels_as_data(image_dir, classes, 10, reduction_percent)
 
     # Esto es para evaluar el C final que elegimos
     X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.3, random_state=42)

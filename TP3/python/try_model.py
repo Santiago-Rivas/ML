@@ -68,7 +68,7 @@ class_colors = {
     2: [0, 255, 0]      # Green
 }
 
-classified_image = classify_image(image_path, svm_clf, class_colors, 20)
+classified_image = classify_image(image_path, svm_clf, class_colors, 10)
 
 model_filename = os.path.basename(args.model_file)  # Get the model filename (e.g., svm_model_i_1_kernel_poly_C_1.00_gamma_scale_cache_500_degree_3.joblib)
 model_name, _ = os.path.splitext(model_filename)  # Remove the file extension (.joblib)
