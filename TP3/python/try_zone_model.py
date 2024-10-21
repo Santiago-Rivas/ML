@@ -91,7 +91,7 @@ class_colors = {
 }
 
 # Clasificar la imagen con ventanas móviles
-classified_image = classify_image_with_moving_window(image_path, svm_clf, class_colors, 10)
+classified_image = classify_image_with_moving_window(image_path, svm_clf, class_colors, 40)
 
 # Guardar la imagen clasificada
 model_filename = os.path.basename(args.model_file)
