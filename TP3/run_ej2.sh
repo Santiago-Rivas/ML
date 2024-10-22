@@ -2,7 +2,7 @@
 
 BASE=output
 
-OUT_DIR="$BASE/new2"
+OUT_DIR="$BASE/new3"
 IMAGE_PATH="images/cow.jpg"
 TRAIN_DIR="images/train"
 

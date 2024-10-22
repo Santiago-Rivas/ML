@@ -1,0 +1,9 @@
+{
+    "kernels": ["rbf"],
+    "c": [100],
+    "gamma": ["scale"],
+    "cache_size": [500],
+    "degree": [3],
+    "n_splits": 5,
+    "reduction_percent" : 100
+}
