@@ -219,7 +219,8 @@ def load_pixels_as_data(image_dir, classes, reduction_percent=100):
             img = Image.open(img_path)
             img = img.convert('RGB')
 
-            img_data = np.array(img) / 255.0
+            # img_data = np.array(img) / 255.0
+            img_data = (np.array(img) / 127.5) - 1.0
             pixels = img_data.reshape(-1, 3)
             print(pixels)
 
@@ -429,6 +430,7 @@ if __name__ == '__main__':
     reduction_percent = config.get('reduction_percent')
     n_splits = config.get('n_splits')
     procs = config.get('procs')
+    final = config.get('final')
 
     # AHORA SI EMPIEZO
     X, y = load_pixels_as_data(image_dir, classes, reduction_percent)
@@ -445,35 +447,36 @@ if __name__ == '__main__':
                                cache_size=cache_size_values,  degree=degree_values, coefs0=coefs0)
 
     lock = multiprocessing.Lock()
-    jobs = []
-    for svc_model in svc_models:
-        kernel_output_dir = os.path.join(img_out_dir, svc_model.kernel)
-        # Create kernel directory if it doesn't exist
-        os.makedirs(kernel_output_dir, exist_ok=True)
+    if not final:
+        jobs = []
+        for svc_model in svc_models:
+            kernel_output_dir = os.path.join(img_out_dir, svc_model.kernel)
+            # Create kernel directory if it doesn't exist
+            os.makedirs(kernel_output_dir, exist_ok=True)
 
-        metrics_output_file = os.path.join(kernel_output_dir, "metrics.csv")
-        if not os.path.exists(metrics_output_file):
-            with open(metrics_output_file, 'w') as f:
-                if svc_model.kernel == 'poly':
-                    f.write(
-                        "kernel;c_value;gamma;degree;coef0;iteration;class;precision;recall;f1;accuracy\n")
-                elif svc_model.kernel == 'rbf':
-                    f.write(
-                        "kernel;c_value;gamma;iteration;class;precision;recall;f1;accuracy\n")
-                elif svc_model.kernel == 'sigmoid':
-                    f.write(
-                        "kernel;c_value;gamma;coef0;iteration;class;precision;recall;f1;accuracy\n")
-                elif svc_model.kernel == 'linear':
-                    f.write(
-                        "kernel;c_value;iteration;class;precision;recall;f1;accuracy\n")
+            metrics_output_file = os.path.join(kernel_output_dir, "metrics.csv")
+            if not os.path.exists(metrics_output_file):
+                with open(metrics_output_file, 'w') as f:
+                    if svc_model.kernel == 'poly':
+                        f.write(
+                            "kernel;c_value;gamma;degree;coef0;iteration;class;precision;recall;f1;accuracy\n")
+                    elif svc_model.kernel == 'rbf':
+                        f.write(
+                            "kernel;c_value;gamma;iteration;class;precision;recall;f1;accuracy\n")
+                    elif svc_model.kernel == 'sigmoid':
+                        f.write(
+                            "kernel;c_value;gamma;coef0;iteration;class;precision;recall;f1;accuracy\n")
+                    elif svc_model.kernel == 'linear':
+                        f.write(
+                            "kernel;c_value;iteration;class;precision;recall;f1;accuracy\n")
 
-        jobs.append((svc_model, train_sets, test_sets, classes, class_colors,
-                    large_image_path, kernel_output_dir, metrics_output_file))
+            jobs.append((svc_model, train_sets, test_sets, classes, class_colors,
+                        large_image_path, kernel_output_dir, metrics_output_file))
 
-    with multiprocessing.Pool(processes=procs) as pool:
-        pool.starmap(run_svm, jobs)
+        with multiprocessing.Pool(processes=procs) as pool:
+            pool.starmap(run_svm, jobs)
 
-    print("FINISHED DEFINITION BEST MODEL")
+        print("FINISHED DEFINITION BEST MODEL")
 
     jobs = []
     for svc_model in svc_models:
