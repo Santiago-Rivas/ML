@@ -439,8 +439,8 @@ if __name__ == '__main__':
     jobs = [(svc_model, train_sets, test_sets, classes, class_colors, large_image_path, img_out_dir, metrics_output_file) 
             for svc_model in svc_models]
 
-    with multiprocessing.Pool(processes=3) as pool:
-        pool.starmap(run_svm, jobs)
+    #with multiprocessing.Pool(processes=3) as pool:
+    #    pool.starmap(run_svm, jobs)
     
     print("FINISHED DEFINITION BEST MODEL")
 
