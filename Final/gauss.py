@@ -3,21 +3,19 @@ import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
 from skimage import io
 
-# Load the training image
 image_path = "./imagenes/messi.jpeg"  # Change to your training image path
+image_path = "./imagenes/cow.jpg"  # Cambia esto por la ruta de tu imagen
 image = io.imread(image_path)
 image = image / 255.0  # Normalize pixel values to [0, 1]
 
 # Prepare the training image data for clustering
 pixel_data = image.reshape(-1, 3)
 
-# Load the test image
 new_image_path = "./imagenes/perito.jpeg"  # Change to your test image path
 new_image = io.imread(new_image_path)
 new_image = new_image / 255.0  # Normalize pixel values to [0, 1]
 new_pixel_data = new_image.reshape(-1, 3)
 
-# Configure the Gaussian Mixture Model
 n_clusters = 5
 gmm = GaussianMixture(n_components=n_clusters, covariance_type='tied', random_state=42)
 
