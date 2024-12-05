@@ -4,7 +4,7 @@ from sklearn.mixture import GaussianMixture
 from skimage import io
 
 # Cargar la imagen
-image_path = "./imagenes/perito.jpeg"  # Cambia esto por la ruta de tu imagen
+image_path = "./imagenes/cow.jpg"  # Cambia esto por la ruta de tu imagen
 image = io.imread(image_path)
 image = image / 255.0  # Normalizar los valores de píxeles a [0, 1]
 
@@ -12,7 +12,7 @@ image = image / 255.0  # Normalizar los valores de píxeles a [0, 1]
 pixel_data = image.reshape(-1, 3)
 
 # Configurar el modelo Gaussian Mixture
-n_clusters = 5  # Número de segmentos deseados
+n_clusters = 10  # Número de segmentos deseados
 gmm = GaussianMixture(n_components=n_clusters, covariance_type='tied', random_state=42)
 
 # Ajustar el modelo y predecir los clusters
