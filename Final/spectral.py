@@ -11,7 +11,7 @@ plt.title("Imagen Original")
 plt.axis('off')
 plt.show()
 
-## MODIFICAR ACA PARA QUE TENGA MAS CALIDAD
+# MODIFICAR ACA PARA QUE TENGA MAS CALIDAD
 # 2. Reducir la resolución de la imagen
 scale_percent = 3  # Porcentaje de reducción (ajusta este valor según tus necesidades)
 width = int(image.shape[1] * scale_percent / 100)
@@ -30,9 +30,10 @@ pixels_normalized = pixels / 255.0  # Normalizar a [0, 1]
 # 4. Aplicar Spectral Clustering
 num_clusters = 7  # Número de clusters deseados
 print(f"Aplicando Spectral Clustering con {num_clusters} clusters...")
-spectral = SpectralClustering(n_clusters=num_clusters, affinity='nearest_neighbors', assign_labels='kmeans', random_state=42)
+spectral = SpectralClustering(n_clusters=num_clusters, affinity='rbf', assign_labels='kmeans', random_state=42)
 labels = spectral.fit_predict(pixels_normalized)
 
+print("Reconstruyendo imagen...")
 # 5. Reconstruir la imagen
 clustered_image = labels.reshape(small_image.shape[:2])  # Forma de la imagen reducida
 
